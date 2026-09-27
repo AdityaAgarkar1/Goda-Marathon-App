@@ -5,6 +5,7 @@ import { getPublishedPastEvents } from '../utils/services/pastEvents';
 import { resolveImageUrl, getYouTubeId } from '../utils/mediaUrl';
 import { formatDisplayDate } from '../utils/dates';
 import Seo from '../components/Seo';
+import { HeroImage, DEFAULT_HERO_IMAGE } from '../components/HeroImage';
 import './PastEvents.css';
 
 // Shown only when no published edition exists in the DB, so the page never
@@ -196,9 +197,9 @@ export default function PastEvents() {
   const nextImage = useCallback(() => setLightboxIndex(p => (p + 1) % images.length), [images.length]);
   const prevImage = useCallback(() => setLightboxIndex(p => (p - 1 + images.length) % images.length), [images.length]);
 
-  const heroStyle = currentEvent.cover_image
-    ? { backgroundImage: `url(${resolveImageUrl(currentEvent.cover_image, 1600)})` }
-    : undefined;
+  // Nothing until the editions load: rendering the default first meant every
+  // visit downloaded it only to swap it for the edition's own cover.
+  const heroImage = isLoading ? null : (currentEvent.cover_image || DEFAULT_HERO_IMAGE);
 
   return (
     <div className="past-events-page">
@@ -208,7 +209,9 @@ export default function PastEvents() {
         image={currentEvent.cover_image}
       />
       <div className="pe-hero">
-        <div className="pe-hero-bg" style={heroStyle} />
+        {heroImage && (
+          <HeroImage src={heroImage} className="pe-hero-bg" sizes="(max-width: 767px) 200vw, 100vw" />
+        )}
         <div className="pe-hero-overlay" />
         <div className="pe-hero-content">
           <div className="pe-hero-badge">

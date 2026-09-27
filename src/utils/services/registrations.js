@@ -235,8 +235,8 @@ export const bulkDeleteRegistrations = async (ids) => {
  * Stats for the dashboard header.
  *
  * Revenue counts confirmed money only. Summing every row, cancelled entries
- * included, overstated takings -- and since payment is collected outside the
- * app, a PENDING entry is not revenue at all.
+ * included, overstated takings -- and a PENDING entry, whether awaiting an
+ * online payment or offline collection, is not revenue at all.
  */
 export const getStats = async (eventSlug = null) => {
   try {
@@ -298,7 +298,8 @@ export const exportToCSV = async (eventSlug) => {
     'Medical Condition', 'Allergies',
     'City', 'State', 'Pincode', 'Club',
     'Group', 'Coupon', 'List Price', 'Discount', 'Payable',
-    'Payment Status', 'Finish Status', 'Finish Time',
+    'Payment Status', 'Payment ID', 'Paid At', 'Cancelled Reason',
+    'Finish Status', 'Finish Time',
     'Waivers Accepted', 'Registered At',
   ];
 
@@ -336,6 +337,12 @@ export const exportToCSV = async (eventSlug) => {
     cell(r.discount_amount ?? 0),
     cell(r.price),
     cell(r.payment_status),
+    // Razorpay's pay_... id, for matching a row against a settlement report.
+    cell(r.payment_ref),
+    cell(r.paid_at ? new Date(r.paid_at).toLocaleString('en-IN') : ''),
+    // PAYMENT_TIMEOUT marks a reservation that was never paid, as opposed to
+    // one an organiser cancelled.
+    cell(r.cancelled_reason),
     cell(r.finish_status),
     cell(r.finish_time),
     cell(r.waivers_accepted ? 'Yes' : 'No'),

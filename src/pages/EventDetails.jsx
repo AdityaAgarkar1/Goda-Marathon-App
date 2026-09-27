@@ -6,6 +6,7 @@ import { getCurrentEvent } from '../utils/services/events';
 import { getEventCategories } from '../utils/services/categories';
 import { getEventSchedule } from '../utils/services/schedule';
 import Seo from '../components/Seo';
+import { HeroImage } from '../components/HeroImage';
 
 // Hardcoded fallback if DB fetch fails
 const FALLBACK_EVENT = {
@@ -117,12 +118,10 @@ export default function EventDetails() {
         image={e.hero_image}
       />
       {/* Hero.
-          `hero--compact` carries the height and the overlay; only the image
-          itself stays inline, because it comes from the event row. */}
-      <div
-        className="hero hero--compact"
-        style={{ backgroundImage: `url(${e.hero_image || '/images/trail_hero.png'})` }}
-      >
+          `hero--compact` carries the height and the overlay. On phones the
+          box is taller than it is wide, so the photo is drawn at ~200vw. */}
+      <div className="hero hero--compact">
+        <HeroImage src={e.hero_image} className="hero-bg" sizes="(max-width: 767px) 200vw, 100vw" />
         <div className="hero-overlay"></div>
         <div className="container hero-content">
           <h1 style={{ marginBottom: '16px' }}>

@@ -1,12 +1,15 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader, Users } from 'lucide-react';
+import { Loader, Users, RotateCcw } from 'lucide-react';
 
 import { CATEGORY_PRICING, CURRENT_EVENT, CATEGORY_RULES } from '../../utils/constants';
 import { addRegistration, isEmailRegistered } from '../../utils/services/registrations';
 import { getEventCategories } from '../../utils/services/categories';
 import { getCurrentEvent } from '../../utils/services/events';
 import { previewCoupon } from '../../utils/services/coupons';
+import {
+  isOnlinePaymentEnabled, savePendingPayment, loadPendingPayment, clearPendingPayment,
+} from '../../utils/services/payments';
 import { isValidPhone, isValidEmail, isValidPincode, calculateAge } from '../../utils/validation';
 import { trackEvent } from '../../utils/analytics';
 
@@ -16,6 +19,8 @@ import StepRace from './StepRace';
 import StepDetails from './StepDetails';
 import StepConfirm from './StepConfirm';
 import SuccessScreen from './SuccessScreen';
+import PaymentPanel from './PaymentPanel';
+import usePayment from './usePayment';
 import './Register.css';
 
 const DRAFT_KEY = 'goda-registration-draft';
@@ -62,9 +67,16 @@ export default function Register() {
   const [eventConfig, setEventConfig] = useState(null);
   const [registration, setRegistration] = useState(null);
   const [couponQuote, setCouponQuote] = useState(null);
+  const [payer, setPayer] = useState(null);
+
+  const {
+    phase: payPhase, message: payMessage, paymentId,
+    pay, recheck, cancel: cancelPayment, reset: resetPayment,
+  } = usePayment();
 
   const formRef = useRef(null);
   const age = useMemo(() => calculateAge(formData.dob), [formData.dob]);
+  const onlinePayment = isOnlinePaymentEnabled(eventConfig);
 
   /* ── Load event + categories, restore any draft ───────────────────────── */
 
@@ -81,6 +93,16 @@ export default function Register() {
       } catch (err) {
         console.error('Failed to parse registration draft', err);
       }
+    }
+
+    // A reservation awaiting payment outranks the draft. Without this, a
+    // reload mid-payment lands on the form again, and the email is refused as
+    // already registered until the reservation lapses.
+    const pending = loadPendingPayment('SOLO');
+    if (pending?.registration) {
+      setRegistration(pending.registration);
+      setPayer(pending.prefill || null);
+      setStep(4);
     }
 
     (async () => {
@@ -340,7 +362,14 @@ export default function Register() {
     try {
       const taken = await isEmailRegistered(formData.email.trim(), CURRENT_EVENT.slug);
       if (taken) {
-        const dup = { email: 'This email is already registered for this event.' };
+        // The likeliest cause with online payment on is the runner's own
+        // unfinished attempt from another device. Saying so beats leaving them
+        // convinced someone else has their entry.
+        const dup = {
+          email: onlinePayment
+            ? `This email is already registered for this event. If you started registering recently and did not finish paying, that reservation is released after ${eventConfig?.payment_hold_minutes || 30} minutes — try again then.`
+            : 'This email is already registered for this event.',
+        };
         setErrors(dup);
         focusFirstError(dup);
         trackEvent('registration_validation_failed', { step: 2, fields: ['email'], reason: 'duplicate' });
@@ -353,6 +382,109 @@ export default function Register() {
     setErrors({});
     trackEvent('registration_step_completed', { step: 2, city: formData.city, state: formData.state });
     setStep(3);
+  };
+
+  /* ── Step 4: payment ──────────────────────────────────────────────────── */
+
+  const handlePaid = useCallback((result) => {
+    // `result` is null when the entry was found already paid (the webhook got
+    // there first); the reservation already holds everything the success
+    // screen shows, so only the status changes.
+    setRegistration(prev => ({
+      ...prev,
+      ...(result?.registration || {}),
+      payment_status: 'PAID',
+      payment_ref: result?.registration?.payment_ref || result?.paymentId || prev?.payment_ref,
+    }));
+    clearPendingPayment();
+    localStorage.removeItem(DRAFT_KEY);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const startPayment = useCallback(async (reg, prefill) => {
+    trackEvent('payment_started', { flow: 'solo', amount: reg?.price });
+    const outcome = await pay({
+      registrationId: reg.id,
+      dueAt: reg.payment_due_at,
+      prefill,
+    });
+
+    if (outcome.outcome === 'paid') {
+      handlePaid(outcome.result);
+      trackEvent('payment_completed', { flow: 'solo', amount: reg?.price });
+    } else {
+      // Nothing left to resume. The draft stays for a lapsed reservation (so
+      // "Start again" has the details) but goes when online payment was
+      // switched off, because that entry stands as an ordinary pending one.
+      if (['EXPIRED', 'NOT_PAYABLE', 'NOT_FOUND', 'DISABLED'].includes(outcome.code)) {
+        clearPendingPayment();
+      }
+      if (outcome.code === 'DISABLED') localStorage.removeItem(DRAFT_KEY);
+      trackEvent('payment_not_completed', { flow: 'solo', outcome: outcome.outcome, reason: outcome.code });
+    }
+  }, [pay, handlePaid]);
+
+  const recheckPayment = useCallback(async () => {
+    const outcome = await recheck();
+    if (outcome?.outcome === 'paid') handlePaid(outcome.result);
+  }, [recheck, handlePaid]);
+
+  /**
+   * The reservation lapsed. The draft was kept until payment for exactly this:
+   * the runner goes back to the confirm step with every field still filled in,
+   * and resubmitting sweeps the old reservation and takes a new one.
+   */
+  const startOver = useCallback(() => {
+    clearPendingPayment();
+    resetPayment();
+    setRegistration(null);
+    setStep(3);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [resetPayment]);
+
+  /**
+   * The runner released their reservation. It is cancelled on the server, not
+   * just forgotten here -- otherwise resubmitting with a corrected name or
+   * category would be refused as "already registered" until the hold lapsed.
+   * They land on step 1 with every field still filled in.
+   */
+  const cancelReservation = useCallback(async () => {
+    const result = await cancelPayment({ registrationId: registration?.id });
+
+    if (result.status === 'PAID') {
+      // The payment landed first. Show the confirmation, not the form.
+      handlePaid({ paymentId: result.payment_ref });
+      return;
+    }
+
+    if (result.status === 'CANCELLED' || result.status === 'NOT_FOUND') {
+      clearPendingPayment();
+      resetPayment();
+      setRegistration(null);
+      setStep(1);
+      setNotice('Your reservation was cancelled and nothing was charged. Change anything below and submit again, or use “Clear form” to start a new registration.');
+      trackEvent('reservation_cancelled', { flow: 'solo' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [cancelPayment, registration?.id, handlePaid, resetPayment]);
+
+  // Anything typed or ticked -- the draft restore can bring back someone
+  // else's details on a shared computer, which is when this matters most.
+  const formHasData = Object.keys(EMPTY_FORM).some(k => formData[k] !== EMPTY_FORM[k])
+    || Object.values(waivers).some(Boolean);
+
+  const clearForm = () => {
+    if (!window.confirm('Clear everything you have entered and start a new registration?')) return;
+    setFormData(EMPTY_FORM);
+    setWaivers(EMPTY_WAIVERS);
+    setErrors({});
+    setSubmitError('');
+    setNotice('');
+    setCouponQuote(null);
+    localStorage.removeItem(DRAFT_KEY);
+    setStep(1);
+    trackEvent('registration_form_cleared', {});
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   /* ── Step 3: confirm ──────────────────────────────────────────────────── */
@@ -393,13 +525,29 @@ export default function Register() {
       });
 
       setRegistration(saved);
-      localStorage.removeItem(DRAFT_KEY);
       trackEvent('registration_completed', {
         category: formData.category,
         price: saved?.price,
       });
       setStep(4);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // A deadline means online payment is on and something is owed. Checkout
+      // opens straight away -- the button they pressed said "Continue to
+      // payment". The draft is kept until the payment lands, so a lapsed
+      // reservation can be resubmitted without retyping anything.
+      if (saved?.payment_status === 'PENDING' && saved?.payment_due_at) {
+        const prefill = {
+          name: `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim(),
+          email: formData.email.trim(),
+          contact: formData.phone.trim(),
+        };
+        setPayer(prefill);
+        savePendingPayment('SOLO', { registration: saved, prefill, dueAt: saved.payment_due_at });
+        startPayment(saved, prefill);
+      } else {
+        localStorage.removeItem(DRAFT_KEY);
+      }
     } catch (err) {
       // The service turns each database error code into a sentence the runner
       // can act on -- "that category just filled up" rather than a stack trace.
@@ -434,6 +582,12 @@ export default function Register() {
   };
 
   /* ── Render ───────────────────────────────────────────────────────────── */
+
+  // Reserved, owing money, and online payment still available. When an admin
+  // switches online payment off mid-way the entry is an ordinary PENDING one,
+  // and the success screen's "we will contact you" is the right thing to show.
+  const awaitingPayment = registration?.payment_status === 'PENDING'
+    && !!registration?.payment_due_at && payPhase !== 'offline';
 
   if (!isLoaded) {
     return (
@@ -497,6 +651,14 @@ export default function Register() {
           </ol>
         )}
 
+        {step < 4 && formHasData && (
+          <div className="reg-toolbar">
+            <button type="button" className="reg-clear-btn" onClick={clearForm}>
+              <RotateCcw size={14} aria-hidden="true" /> Clear form
+            </button>
+          </div>
+        )}
+
         <div className="reg-shell glass" ref={formRef}>
           {notice && <p className="reg-notice" role="status">{notice}</p>}
 
@@ -537,10 +699,36 @@ export default function Register() {
               isSubmitting={isSubmitting}
               formatCurrency={formatCurrency}
               submitError={submitError}
+              onlinePayment={onlinePayment}
+              holdMinutes={eventConfig?.payment_hold_minutes}
             />
           )}
 
-          {step === 4 && (
+          {step === 4 && awaitingPayment && (
+            <PaymentPanel
+              amount={registration.price}
+              dueAt={registration.payment_due_at}
+              summary={[
+                { label: 'Runner', value: `${registration.first_name || ''} ${registration.last_name || ''}`.trim() },
+                { label: 'Category', value: registration.category },
+                ...(Number(registration.discount) > 0
+                  ? [{ label: `Discount (${registration.coupon_code})`, value: `− ${formatCurrency(registration.discount)}` }]
+                  : []),
+              ]}
+              phase={payPhase}
+              message={payMessage}
+              paymentId={paymentId}
+              onPay={() => startPayment(registration, payer || { email: registration.email })}
+              onRecheck={recheckPayment}
+              onStartOver={startOver}
+              onCancel={cancelReservation}
+              formatCurrency={formatCurrency}
+              contactEmail={eventConfig?.contact_email}
+              contactPhone={eventConfig?.contact_phone}
+            />
+          )}
+
+          {step === 4 && !awaitingPayment && (
             <SuccessScreen
               registration={registration}
               eventName={eventConfig?.name || CURRENT_EVENT.name}

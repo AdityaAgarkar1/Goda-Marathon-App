@@ -30,6 +30,7 @@ export default function StepGroupConfirm({
   subtotal, discount, total,
   waiversAccepted, authorityConfirmed, onWaiversChange, onAuthorityChange,
   errors, onBack, onSubmit, isSubmitting, submitError, formatCurrency,
+  onlinePayment = false, holdMinutes = 30,
 }) {
   const applied = !!quote?.valid;
   const refusal = couponCode.trim() && quote && !quote.valid && quote.reason !== 'PREVIEW_FAILED'
@@ -199,16 +200,33 @@ export default function StepGroupConfirm({
 
       <div className="reg-payment-note">
         <Info size={18} aria-hidden="true" />
-        <div>
-          <strong>Payment is collected separately.</strong>
-          <p>
-            Submitting reserves every place in this group and records them as
-            <em> payment pending</em>. The organisers will contact you at{' '}
-            <strong>{captain.email || 'your email'}</strong> with instructions for
-            the full amount. The group&apos;s places are confirmed once payment is
-            received.
-          </p>
-        </div>
+        {onlinePayment && total > 0 ? (
+          <div>
+            <strong>One secure online payment for the whole group.</strong>
+            <p>
+              Continuing reserves every place in this group for {holdMinutes} minutes
+              and opens a Razorpay checkout for <strong>{formatCurrency(total)}</strong>.
+              All {participants.length} entries are confirmed the moment payment goes
+              through.
+            </p>
+          </div>
+        ) : onlinePayment ? (
+          <div>
+            <strong>Nothing to pay.</strong>
+            <p>Every entry in this group is confirmed as soon as you submit.</p>
+          </div>
+        ) : (
+          <div>
+            <strong>Payment is collected separately.</strong>
+            <p>
+              Submitting reserves every place in this group and records them as
+              <em> payment pending</em>. The organisers will contact you at{' '}
+              <strong>{captain.email || 'your email'}</strong> with instructions for
+              the full amount. The group&apos;s places are confirmed once payment is
+              received.
+            </p>
+          </div>
+        )}
       </div>
 
       {submitError && (
@@ -222,8 +240,10 @@ export default function StepGroupConfirm({
         <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Back</Button>
         <Button type="submit" variant="primary" disabled={isSubmitting}>
           {isSubmitting
-            ? `Submitting ${participants.length} entries…`
-            : `Submit group — ${formatCurrency(total)}`}
+            ? `Reserving ${participants.length} places…`
+            : onlinePayment && total > 0
+              ? `Continue to payment — ${formatCurrency(total)}`
+              : `Submit group — ${formatCurrency(total)}`}
         </Button>
       </div>
     </form>

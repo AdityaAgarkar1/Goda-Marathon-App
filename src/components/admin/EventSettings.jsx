@@ -24,12 +24,24 @@ export default function EventSettings() {
     setSaveMsg('');
   };
 
+  // The payment columns arrive with migration 0011. Until then they are
+  // neither shown nor saved, so this panel keeps working on a database that
+  // has not been migrated yet.
+  const hasPaymentSettings = !!eventData && 'online_payment_enabled' in eventData;
+
   const handleSave = async () => {
     if (!eventData) return;
     setIsSaving(true);
     setSaveMsg('');
     try {
+      const hold = parseInt(eventData.payment_hold_minutes, 10);
       await updateEvent(eventData.id, {
+        ...(hasPaymentSettings ? {
+          online_payment_enabled: !!eventData.online_payment_enabled,
+          // The database enforces 10-180; clamping here turns a typo into a
+          // sensible value instead of a failed save.
+          payment_hold_minutes: Number.isFinite(hold) ? Math.min(Math.max(hold, 10), 180) : 30,
+        } : {}),
         name: eventData.name,
         date: eventData.date,
         location: eventData.location,
@@ -148,6 +160,38 @@ export default function EventSettings() {
             <span>Registration {eventData.registration_open ? 'Open' : 'Closed'}</span>
           </label>
         </div>
+
+        {/* Payments */}
+        <h4 className="admin-form-section-title" style={{ marginTop: '1.5rem' }}>Payments</h4>
+        {hasPaymentSettings ? (
+          <>
+            <div className="admin-event-toggle">
+              <label className="admin-toggle-label">
+                <input type="checkbox" name="online_payment_enabled" checked={eventData.online_payment_enabled || false} onChange={handleInput} className="admin-toggle-checkbox" />
+                <span className="admin-toggle-switch"></span>
+                <span>Online payment (Razorpay) {eventData.online_payment_enabled ? 'On' : 'Off'}</span>
+              </label>
+            </div>
+            <span className="admin-field-hint" style={{ display: 'block', marginTop: '0.5rem' }}>
+              On: runners pay by Razorpay when they register, and their entry is confirmed automatically.
+              An unpaid reservation is released after the hold time below. Off: entries are saved as
+              payment pending and you collect payment yourselves. Switching off keeps any reservations
+              already waiting as ordinary pending entries. Test a full payment before switching this on
+              for the public.
+            </span>
+            <div className="admin-media-form-grid" style={{ marginTop: '0.75rem' }}>
+              <div className="admin-media-form-group">
+                <label htmlFor="evt-hold">Hold unpaid reservations for (minutes)</label>
+                <input id="evt-hold" name="payment_hold_minutes" type="number" min={10} max={180} value={eventData.payment_hold_minutes ?? 30} onChange={handleInput} />
+                <span className="admin-field-hint">10 to 180. 30 leaves time for a slow UPI approval.</span>
+              </div>
+            </div>
+          </>
+        ) : (
+          <p className="admin-field-hint">
+            Apply <code>supabase/migrations/0011_razorpay_payments.sql</code> to enable online payment.
+          </p>
+        )}
 
         {/* Contact Details */}
         <h4 className="admin-form-section-title" style={{ marginTop: '1.5rem' }}>Contact Details</h4>

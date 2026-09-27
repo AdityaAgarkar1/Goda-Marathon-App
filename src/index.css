@@ -325,6 +325,92 @@ label {
   z-index: 1;
 }
 
+/* Landing hero copy. Scoped under .hero--home so these beat `.badge` and the
+   global `h1` sizes regardless of order in this file. */
+.hero--home .hero-badge {
+  margin-bottom: 24px;
+  font-size: 1rem;
+  padding: 8px 16px;
+}
+.hero--home .hero-title {
+  font-size: clamp(3rem, 8vw, 6rem);
+  margin-bottom: 16px;
+  letter-spacing: -2px;
+  text-transform: uppercase;
+}
+.hero--home .hero-subcopy {
+  font-size: 1.25rem;
+  max-width: 600px;
+  margin-bottom: 40px;
+}
+
+/* ========================================
+   Landing hero on phones
+   On a phone the hero also holds the date/location card, so it runs to
+   ~1,150px tall. Covering all of that with a 3:2 landscape photo scaled it
+   to ~1,750px wide and kept only the middle 22% -- the gap between runners,
+   with the buttons over their faces.
+
+   Here the photo is a band about as deep as the photo's own proportions
+   allow, so ~80% of the frame survives the crop. The copy starts halfway
+   down the band: the runners stay clear above it, the headline sits over the
+   band's darkened foot, and everything else continues on the page colour.
+   ======================================== */
+@media (max-width: 767px) {
+  .hero--home {
+    --hero-band: clamp(300px, 86vw, 460px);
+    min-height: 0;
+    align-items: flex-start;
+    padding-top: calc(var(--hero-band) * 0.46);
+    padding-bottom: var(--spacing-lg);
+  }
+
+  .hero--home .hero-bg,
+  .hero--home .hero-overlay {
+    height: var(--hero-band);
+  }
+
+  .hero--home .hero-overlay {
+    background: linear-gradient(180deg,
+      rgba(11, 11, 11, 0.25) 0%,
+      rgba(11, 11, 11, 0) 14%,
+      rgba(11, 11, 11, 0.08) 38%,
+      rgba(11, 11, 11, 0.6) 62%,
+      rgba(11, 11, 11, 0.9) 84%,
+      var(--color-bg-base) 100%);
+  }
+
+  .hero--home .hero-badge {
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+    padding: 6px 14px;
+    /* It sits on bare photograph here, often on green foliage: keep the
+       brand tint but back it with the page colour. */
+    background:
+      linear-gradient(rgba(69, 229, 44, 0.12), rgba(69, 229, 44, 0.12)),
+      rgba(11, 11, 11, 0.6);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+
+  .hero--home .hero-title {
+    text-shadow: 0 2px 24px rgba(0, 0, 0, 0.75), 0 1px 3px rgba(0, 0, 0, 0.6);
+  }
+
+  /* Gradient text is a transparent fill, so a shadow shows through the
+     glyphs and muddies them. The green is bright enough on the dark foot. */
+  .hero--home .hero-title .gradient-text {
+    text-shadow: none;
+  }
+
+  /* Tighter so "Register Now" stays above the fold with Safari's toolbars
+     showing. */
+  .hero--home .hero-subcopy {
+    font-size: 1.05rem;
+    margin-bottom: 28px;
+  }
+}
+
 /* ========================================
    Compact hero — /event
    The landing hero fills the viewport and centres its text, so its overlay is
@@ -342,21 +428,11 @@ label {
   align-items: flex-end;
   padding-top: var(--spacing-lg);
   padding-bottom: var(--spacing-lg);
-  background-position: center;
-  background-size: cover;
 
-  /* Without this the overlay does not appear at all.
-     `.hero-overlay` sits at z-index: -1, and `.hero` is `position: relative`
-     with `z-index: auto`, which does NOT create a stacking context. The
-     negative-z overlay therefore escapes to the root stacking context and
-     paints BEHIND this element's own background image -- invisible. The
-     landing hero gets away with it because its photo is an <img> that escapes
-     the same way, one layer further back; this one carries the photo as a
-     background, so the overlay had nothing to sit on top of.
-
-     `isolation: isolate` makes this element a stacking context, so the overlay
-     is painted above its background and below its content, which is what the
-     z-indexes were always meant to express. */
+  /* `.hero` is `position: relative` with `z-index: auto`, which does NOT
+     create a stacking context, so its negative-z photo and overlay would
+     escape to the root and layer against whatever surrounds the hero. This
+     keeps them inside it -- above its background, below its content. */
   isolation: isolate;
 }
 

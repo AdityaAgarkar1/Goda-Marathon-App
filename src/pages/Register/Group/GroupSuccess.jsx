@@ -17,6 +17,7 @@ export default function GroupSuccess({
   result, eventName, contactEmail, contactPhone, formatCurrency,
 }) {
   const participants = result?.participants || [];
+  const isPaid = result?.payment_status === 'PAID';
 
   /**
    * The roster as a CSV, built from the response rather than from form state.
@@ -60,10 +61,13 @@ export default function GroupSuccess({
   return (
     <div className="reg-success">
       <CheckCircle size={72} className="reg-success-icon" aria-hidden="true" />
-      <h2 className="reg-success-title">Group registration received</h2>
+      <h2 className="reg-success-title">
+        {isPaid ? 'Group entry confirmed' : 'Group registration received'}
+      </h2>
       <p className="reg-success-subtitle">
-        {result?.participant_count} entries for {eventName} are saved. Quote your
-        group reference in any correspondence.
+        {result?.participant_count} entries for {eventName} are{' '}
+        {isPaid ? 'paid and confirmed' : 'saved'}. Quote your group reference in
+        any correspondence.
       </p>
 
       <div className="reg-success-card">
@@ -96,11 +100,21 @@ export default function GroupSuccess({
           <div>
             <dt>Status</dt>
             <dd>
-              <span className="reg-status-pending">
-                <Clock size={14} aria-hidden="true" /> Payment pending
-              </span>
+              {isPaid ? (
+                <span className="reg-status-paid">Confirmed</span>
+              ) : (
+                <span className="reg-status-pending">
+                  <Clock size={14} aria-hidden="true" /> Payment pending
+                </span>
+              )}
             </dd>
           </div>
+          {result?.payment_ref && (
+            <div>
+              <dt>Payment ID</dt>
+              <dd>{result.payment_ref}</dd>
+            </div>
+          )}
         </dl>
 
         {/* A code that was typed but did not apply is said so plainly, with the
@@ -158,11 +172,20 @@ export default function GroupSuccess({
       <div className="reg-success-next">
         <h3>What happens next</h3>
         <ol>
-          <li>
-            The organisers will contact you at <strong>{result?.captain_email}</strong> with
-            payment instructions for {formatCurrency(result?.total)}.
-          </li>
-          <li>Every place in the group is confirmed once payment is received.</li>
+          {isPaid ? (
+            <li>
+              Every place in the group is confirmed. Share the roster (with bib
+              numbers) with your runners using the download above.
+            </li>
+          ) : (
+            <>
+              <li>
+                The organisers will contact you at <strong>{result?.captain_email}</strong> with
+                payment instructions for {formatCurrency(result?.total)}.
+              </li>
+              <li>Every place in the group is confirmed once payment is received.</li>
+            </>
+          )}
           <li>
             Bib collection details are shared closer to race day. Each runner
             carries their own government photo ID.

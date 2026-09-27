@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Download, Users, IndianRupee, Activity, Search, Filter, RefreshCw, Edit3, CheckSquare, Square, XCircle } from 'lucide-react';
+import { Download, Users, IndianRupee, Activity, Search, Filter, RefreshCw, Edit3, CheckSquare, Square, XCircle, AlertTriangle } from 'lucide-react';
 import { getRegistrations, getStats, exportToCSV, updateRegistration, deleteRegistration, bulkUpdatePaymentStatus, bulkDeleteRegistrations } from '../../utils/services/registrations';
 import { getEventCategories } from '../../utils/services/categories';
+import { getPaymentIssues } from '../../utils/services/payments';
 import EditRegistrationModal from './EditRegistrationModal';
 
 const PAGE_SIZE = 50;
@@ -19,6 +20,7 @@ export default function RegistrationManager({ eventSlug, eventUuid }) {
   const [editingReg, setEditingReg] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+  const [paymentIssues, setPaymentIssues] = useState([]);
 
   // Debounce search input (300ms)
   useEffect(() => {
@@ -40,16 +42,18 @@ export default function RegistrationManager({ eventSlug, eventUuid }) {
         status: statusFilter || undefined,
       };
 
-      const [result, statsData, cats] = await Promise.all([
+      const [result, statsData, cats, issues] = await Promise.all([
         getRegistrations(eventSlug, paginatedOptions),
         getStats(eventSlug),
-        eventUuid ? getEventCategories(eventUuid, eventSlug) : Promise.resolve([])
+        eventUuid ? getEventCategories(eventUuid, eventSlug) : Promise.resolve([]),
+        getPaymentIssues(eventSlug),
       ]);
 
       setRegistrations(result.data || []);
       setTotalCount(result.total || 0);
       setStats(statsData);
       setCategories(cats);
+      setPaymentIssues(issues);
     } catch (error) {
       console.error("Error fetching admin data:", error);
     } finally {
@@ -143,6 +147,29 @@ export default function RegistrationManager({ eventSlug, eventUuid }) {
 
   return (
     <>
+      {/* Money that reached Razorpay but could not be applied to an entry.
+          Nothing clears these automatically: each needs a refund from the
+          Razorpay dashboard (which then flips it to REFUNDED by webhook), or a
+          decision to reinstate the entry by hand. */}
+      {paymentIssues.length > 0 && (
+        <div className="admin-save-msg error" role="alert" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: '6px' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertTriangle size={16} aria-hidden="true" />
+            {paymentIssues.length} online payment{paymentIssues.length === 1 ? '' : 's'} could not be applied and need{paymentIssues.length === 1 ? 's' : ''} a refund
+          </span>
+          <ul style={{ margin: 0, paddingLeft: '1.5rem', fontWeight: 400 }}>
+            {paymentIssues.map(p => (
+              <li key={p.id}>
+                <strong>{p.razorpay_payment_id}</strong> — {formatCurrency((p.amount_paise || 0) / 100)} — {p.note}
+              </li>
+            ))}
+          </ul>
+          <span style={{ fontWeight: 400 }}>
+            Refund each from the Razorpay dashboard (Transactions → Payments → search the ID). This list clears itself when Razorpay reports the refund.
+          </span>
+        </div>
+      )}
+
       {/* Stats Cards */}
       <div className="admin-stats-grid">
         <div className="glass admin-stat-card">

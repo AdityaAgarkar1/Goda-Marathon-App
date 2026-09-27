@@ -94,6 +94,8 @@ Apply them **in order** in the Supabase SQL editor, or with
 | `0008_results_and_newsletter.sql` | Real finish times, results switch, newsletter |
 | `0009_policy_rebuild.sql` | **Required.** Rebuilds every policy and verifies the result |
 | `0010_group_registrations_and_coupons.sql` | Bulk (group) entries and real discount codes |
+| `0011_razorpay_payments.sql` | Online payment: reservations with a deadline, `payments` table, settlement functions |
+| `0012_cancel_reservation.sql` | Lets a runner release their own unpaid reservation from the payment step |
 
 0009 is not optional. 0006 removed the old permissive policies by name, which
 missed allow-all policies that had been created outside these migrations. It
@@ -165,17 +167,156 @@ npm run supabase -- secrets set --env-file supabase/.env
 
 ---
 
+## Payments (Razorpay)
+
+Razorpay Standard Checkout, confirmed on the server. **Nothing changes for
+runners until an admin switches on Admin → Settings → Online payment**, so
+everything below can be deployed and tested before the public sees it. The
+frontend works with or without migration 0011 applied; without it the switch
+simply does not appear.
+
+### How it works
+
+1. Submitting the form **reserves** the entry: bib, place and coupon are held
+   for 30 minutes (adjustable in Settings) and the row is `PENDING` with a
+   `payment_due_at` deadline.
+2. The `razorpay-order` edge function reads what is owed **from the database**
+   and creates a Razorpay order. The browser sends only the reservation's id.
+3. Checkout opens in the page. The runner pays by UPI, card, net banking, etc.
+4. `razorpay-verify` checks Razorpay's signature, re-fetches the payment from
+   Razorpay's API, captures it if needed, and marks the entry `PAID`.
+   `razorpay-webhook` does the same server to server, so the entry is
+   confirmed even if the runner closes the tab the moment they pay.
+5. A reservation nobody pays for is released at its deadline: it becomes
+   `CANCELLED` with `cancelled_reason = PAYMENT_TIMEOUT`, and its place, email
+   address and coupon use are freed.
+6. Money that arrives for an entry that can no longer take it (paid after the
+   deadline once the email re-entered, a second payment, an entry an admin
+   cancelled) is **never kept silently**. It is recorded as `REFUND_REQUIRED`
+   and listed at the top of Admin → Registrations until refunded.
+
+A group pays once, by the coordinator; the group and all its members are
+settled together. An entry with nothing to pay (a 100% code) is confirmed
+outright.
+
+### Setup — test mode first
+
+Everything in the Razorpay dashboard below is done with the **Test Mode**
+toggle on. Test and live mode have separate keys and separate webhooks.
+
+1. **Apply migration 0011** (SQL editor, or `npm run supabase -- db push`). It
+   ends with `0011 OK` when the lockdown checks pass.
+
+2. **API keys.** Razorpay dashboard → Account & Settings → API Keys → Generate
+   Key. Copy the key id (`rzp_test_...`) and the secret — the secret is shown
+   once.
+
+3. **Payment capture.** In Account & Settings, set payment capture to
+   **automatic**. The code captures authorised payments itself as a safety net,
+   but with manual capture an uncaptured payment is refunded by Razorpay after
+   a few days and the entry would quietly revert.
+
+4. **Webhook.** Account & Settings → Webhooks → Add New Webhook:
+   - URL: `https://<project-ref>.supabase.co/functions/v1/razorpay-webhook`
+   - Secret: a long random string you make up (e.g. `openssl rand -hex 32`).
+     Keep it for the next step.
+   - Active events: `payment.authorized`, `payment.captured`, `payment.failed`,
+     `order.paid`, `refund.processed`
+
+5. **Secrets.** Add the three values to `supabase/.env` (gitignored, next to the
+   email secrets) and push them:
+
+   ```dotenv
+   RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxx
+   RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxxxxxxxxxx
+   RAZORPAY_WEBHOOK_SECRET=the-random-string-from-step-4
+   ```
+
+   ```bash
+   npm run supabase -- secrets set --env-file supabase/.env
+   ```
+
+   None of these go in the root `.env`. The key id reaches the browser from the
+   edge function with each order, so switching test → live never needs a site
+   rebuild.
+
+6. **Deploy the functions.** `--no-verify-jwt` is required: visitors and
+   Razorpay have no Supabase login. Each function authenticates its caller
+   itself (a reservation UUID, the checkout signature, the webhook signature).
+
+   ```bash
+   npm run supabase -- functions deploy razorpay-order --no-verify-jwt
+   npm run supabase -- functions deploy razorpay-verify --no-verify-jwt
+   npm run supabase -- functions deploy razorpay-webhook --no-verify-jwt
+   ```
+
+7. **Deploy the frontend.** `vercel.json`'s Content-Security-Policy now allows
+   Razorpay's script and iframe; without that update Checkout opens blank.
+
+8. **Switch it on:** Admin → Settings → Online payment → On → Save.
+
+9. **Test, end to end:**
+   - Pay with UPI ID `success@razorpay` (or a test card from Razorpay's test
+     card docs). The success screen says *Entry confirmed*; Admin shows the
+     entry `PAID` with a Payment ID; Razorpay → Webhooks shows deliveries with
+     200 responses.
+   - Pay with `failure@razorpay`: the page offers a retry, the entry stays
+     reserved.
+   - Close Checkout without paying, reload the page: it returns to the payment
+     step with the countdown.
+   - Press *Cancel reservation*: you land on the form with everything filled
+     in, the entry shows `CANCELLED` / `RUNNER_CANCELLED` in Admin, and
+     resubmitting with the same email works straight away. *Clear form* empties
+     it.
+   - Let one reservation lapse (set the hold to 10 minutes to speed this up):
+     it turns `CANCELLED` / `PAYMENT_TIMEOUT` and the same email can register
+     again.
+   - Do the same for a group entry.
+   - Delete the test entries afterwards.
+
+### Going live
+
+1. Finish Razorpay account activation (KYC, website review — they check the
+   policy pages; see the checklist below).
+2. With Test Mode **off**: generate live API keys, and create a **second**
+   webhook with the same URL and events and a new secret.
+3. Replace the three values in `supabase/.env` with the live ones, run
+   `secrets set` again, and redeploy the three functions.
+4. Make one real payment yourself and refund it from the dashboard; the entry
+   should turn `REFUNDED`. Then cancel it in Admin.
+
+### Running it
+
+- **Refunds** are issued from the Razorpay dashboard. The webhook marks the
+  payment (and the entry, if that payment settled it) `REFUNDED`.
+- **Offline payments** still work: an admin can mark any entry paid by hand.
+- **Switching online payment off** keeps reservations already waiting; they
+  become ordinary `PENDING` entries for you to collect.
+- **Optional timer.** Lapsed reservations are released whenever the next
+  registration arrives, and hidden from the "places left" figure the moment
+  they lapse. To also sweep every five minutes on quiet days, enable the
+  `pg_cron` extension (Database → Extensions) and re-run 0011.
+- **In-app browsers.** Razorpay notes that some in-app browsers (Instagram,
+  Facebook Messenger) handle Checkout's iframe poorly. Any payment that does go
+  through is still confirmed by the webhook. If social traffic shows drop-off
+  at the payment step, the next improvement is Razorpay's redirect mode
+  (`callback_url`), which is not built yet.
+
+---
+
 ## Go-live checklist
 
 ### Blocking
 
-- [ ] Migrations 0006 through 0010 applied to the production project
+- [ ] Migrations 0006 through 0011 applied to the production project
 - [ ] First admin account created and sign-in tested at `/admin`
 - [ ] Public sign-ups disabled in Supabase Auth
 - [ ] Test the full registration flow end to end, then delete the test entry
 - [ ] Confirm the anon key can no longer read `registrations` (see below)
-- [ ] Replace `https://godatrailrun.com` with the real domain in `index.html`,
+- [x] Replace `https://goda-marathon-app.vercel.app` with the real domain in `index.html`,
       `public/robots.txt` and `public/sitemap.xml`
+- [ ] `godavariexpedition.in` off GoDaddy hold, DNS pointed at Vercel, and Supabase
+      Auth Site URL set to it
 - [ ] Fill in the entity details marked `TODO` in `src/utils/constants.js`
 - [ ] Have a lawyer review `/privacy-policy`, `/terms` and `/refund-policy`
 
@@ -212,16 +353,25 @@ apply.
       gateway application
 - [ ] `/contact`, `/terms`, `/privacy-policy` and `/refund-policy` reachable
       from every page — they are, via the footer
-- [ ] Price is read from the database, never from the browser — `create_registration`
-      already enforces this, so a gateway amount can be derived from the same source
+- [x] Price is read from the database, never from the browser — `razorpay-order`
+      takes the amount from the stored entry via `prepare_payment()`
+- [ ] `/refund-policy` states how long an approved refund takes to reach the
+      original payment method (Razorpay's website review commonly asks for a
+      timeline)
+- [ ] Full test-mode run from *Payments → Setup* step 9 passed, solo and group
+- [ ] Live keys and a live-mode webhook set up, secrets replaced, functions
+      redeployed
+- [ ] One real payment made and refunded
 
 ---
 
 ## Notable behaviour
 
-**Payment is not integrated.** Submitting the form reserves an entry with
-`payment_status = 'PENDING'` and says so plainly. Only an admin can move an
-entry off PENDING.
+**Payment is online when switched on.** With Admin → Settings → Online
+payment on, an entry is a reservation until paid through Razorpay and is
+released if unpaid by its deadline (see *Payments*). With it off, submitting
+reserves an entry as `PENDING` with no deadline and says so plainly; an admin
+marks it paid.
 
 **Results stay hidden** until `events.results_published` is set. The page
 previously mixed five hardcoded finishers with randomly generated finish times

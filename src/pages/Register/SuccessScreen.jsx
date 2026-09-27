@@ -4,7 +4,8 @@ import { Button } from '../../components/Button';
 import { CheckCircle, Clock } from 'lucide-react';
 
 /**
- * Shown after the entry is saved.
+ * Shown after the entry is saved -- and, with online payment on, after it is
+ * paid.
  *
  * `registration` is the row Supabase returned, so the bib and category are the
  * real stored values. The previous version invented a reference with
@@ -13,14 +14,16 @@ import { CheckCircle, Clock } from 'lucide-react';
  */
 export default function SuccessScreen({ registration, eventName, contactEmail, contactPhone }) {
   const bib = registration?.bib;
-  const isPending = (registration?.payment_status || 'PENDING') === 'PENDING';
+  const isPaid = registration?.payment_status === 'PAID';
 
   return (
     <div className="reg-success">
       <CheckCircle size={72} className="reg-success-icon" aria-hidden="true" />
-      <h2 className="reg-success-title">Registration received</h2>
+      <h2 className="reg-success-title">{isPaid ? 'Entry confirmed' : 'Registration received'}</h2>
       <p className="reg-success-subtitle">
-        Your entry for {eventName} is saved. Keep your bib number for reference.
+        {isPaid
+          ? `You're in! Your place in ${eventName} is confirmed. Keep your bib number for reference.`
+          : `Your entry for ${eventName} is saved. Keep your bib number for reference.`}
       </p>
 
       <div className="reg-success-card">
@@ -41,26 +44,42 @@ export default function SuccessScreen({ registration, eventName, contactEmail, c
           <div>
             <dt>Status</dt>
             <dd>
-              {isPending ? (
+              {isPaid ? (
+                <span className="reg-status-paid">Confirmed</span>
+              ) : (
                 <span className="reg-status-pending">
                   <Clock size={14} aria-hidden="true" /> Payment pending
                 </span>
-              ) : (
-                <span className="reg-status-paid">Confirmed</span>
               )}
             </dd>
           </div>
+          {registration?.payment_ref && (
+            <div>
+              <dt>Payment ID</dt>
+              <dd>{registration.payment_ref}</dd>
+            </div>
+          )}
         </dl>
       </div>
 
       <div className="reg-success-next">
         <h3>What happens next</h3>
         <ol>
-          <li>
-            The organisers will contact you at <strong>{registration?.email}</strong> with
-            payment instructions.
-          </li>
-          <li>Your place is confirmed once payment is received.</li>
+          {isPaid ? (
+            <li>
+              Your place is confirmed. Quote your bib number
+              {registration?.payment_ref ? ' or payment ID' : ''} in any
+              correspondence with the organisers.
+            </li>
+          ) : (
+            <>
+              <li>
+                The organisers will contact you at <strong>{registration?.email}</strong> with
+                payment instructions.
+              </li>
+              <li>Your place is confirmed once payment is received.</li>
+            </>
+          )}
           <li>Bib collection details are shared closer to race day. Carry a government photo ID.</li>
         </ol>
 

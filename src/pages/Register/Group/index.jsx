@@ -1,11 +1,14 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { Loader } from 'lucide-react';
+import { Loader, RotateCcw } from 'lucide-react';
 
 import { CATEGORY_PRICING, CURRENT_EVENT, CATEGORY_RULES } from '../../../utils/constants';
 import { createGroupRegistration } from '../../../utils/services/groupRegistrations';
 import { previewCoupon } from '../../../utils/services/coupons';
 import { getEventCategories } from '../../../utils/services/categories';
 import { getCurrentEvent } from '../../../utils/services/events';
+import {
+  isOnlinePaymentEnabled, savePendingPayment, loadPendingPayment, clearPendingPayment,
+} from '../../../utils/services/payments';
 import { isValidPhone, isValidEmail, isValidPincode, calculateAge } from '../../../utils/validation';
 import { trackEvent } from '../../../utils/analytics';
 
@@ -15,6 +18,8 @@ import StepCoordinator from './StepCoordinator';
 import StepParticipants from './StepParticipants';
 import StepGroupConfirm from './StepGroupConfirm';
 import GroupSuccess from './GroupSuccess';
+import PaymentPanel from '../PaymentPanel';
+import usePayment from '../usePayment';
 import { MIN_PARTICIPANTS, MAX_PARTICIPANTS, formatCurrency } from './groupHelpers';
 import '../Register.css';
 import './Group.css';
@@ -47,6 +52,9 @@ const newParticipant = () => ({
   emergencyContactName: '', emergencyContactNumber: '',
   hasMedicalCondition: false, allergies: '', estimatedTime: '',
 });
+
+/** A fresh row's field values, for telling whether the roster has been touched. */
+const BLANK_PARTICIPANT_FIELDS = Object.entries(newParticipant()).filter(([k]) => k !== '_key');
 
 /**
  * Bulk registration.
@@ -82,8 +90,15 @@ export default function GroupRegister() {
 
   const [quote, setQuote] = useState(null);
   const [isQuoting, setIsQuoting] = useState(false);
+  const [payer, setPayer] = useState(null);
+
+  const {
+    phase: payPhase, message: payMessage, paymentId,
+    pay, recheck, cancel: cancelPayment, reset: resetPayment,
+  } = usePayment();
 
   const formRef = useRef(null);
+  const onlinePayment = isOnlinePaymentEnabled(eventConfig);
 
   /* ── Load event + categories, restore any draft ───────────────────────── */
 
@@ -105,6 +120,16 @@ export default function GroupRegister() {
       } catch (err) {
         console.error('Failed to parse group registration draft', err);
       }
+    }
+
+    // As in the solo flow: a reserved-but-unpaid group comes back to the
+    // payment step on reload instead of to a roster whose emails are now
+    // refused as already registered.
+    const pending = loadPendingPayment('GROUP');
+    if (pending?.result) {
+      setResult(pending.result);
+      setPayer(pending.prefill || null);
+      setStep(4);
     }
 
     (async () => {
@@ -453,6 +478,99 @@ export default function GroupRegister() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  /* ── Step 4: payment ──────────────────────────────────────────────────── */
+
+  const handlePaid = useCallback((paid) => {
+    setResult(prev => ({
+      ...prev,
+      payment_status: 'PAID',
+      payment_ref: paid?.group?.payment_ref || paid?.paymentId || prev?.payment_ref,
+    }));
+    clearPendingPayment();
+    localStorage.removeItem(DRAFT_KEY);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const startPayment = useCallback(async (group, prefill) => {
+    trackEvent('payment_started', { flow: 'group', amount: group?.total, participants: group?.participant_count });
+    const outcome = await pay({
+      groupId: group.group_id,
+      dueAt: group.payment_due_at,
+      prefill,
+    });
+
+    if (outcome.outcome === 'paid') {
+      handlePaid(outcome.result);
+      trackEvent('payment_completed', { flow: 'group', amount: group?.total });
+    } else {
+      if (['EXPIRED', 'NOT_PAYABLE', 'NOT_FOUND', 'DISABLED'].includes(outcome.code)) {
+        clearPendingPayment();
+      }
+      if (outcome.code === 'DISABLED') localStorage.removeItem(DRAFT_KEY);
+      trackEvent('payment_not_completed', { flow: 'group', outcome: outcome.outcome, reason: outcome.code });
+    }
+  }, [pay, handlePaid]);
+
+  const recheckPayment = useCallback(async () => {
+    const outcome = await recheck();
+    if (outcome?.outcome === 'paid') handlePaid(outcome.result);
+  }, [recheck, handlePaid]);
+
+  /** The group's reservation lapsed: back to the confirm step, roster intact. */
+  const startOver = useCallback(() => {
+    clearPendingPayment();
+    resetPayment();
+    setResult(null);
+    setStep(3);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [resetPayment]);
+
+  /**
+   * The coordinator released the group's reservation. Cancelled on the
+   * server, so every runner's email is free to resubmit at once; the roster
+   * stays filled in for editing.
+   */
+  const cancelReservation = useCallback(async () => {
+    const outcome = await cancelPayment({ groupId: result?.group_id });
+
+    if (outcome.status === 'PAID') {
+      handlePaid({ paymentId: outcome.payment_ref });
+      return;
+    }
+
+    if (outcome.status === 'CANCELLED' || outcome.status === 'NOT_FOUND') {
+      clearPendingPayment();
+      resetPayment();
+      setResult(null);
+      setStep(1);
+      setNotice('The group reservation was cancelled and nothing was charged. Change anything and submit again, or use “Clear form” to start a new group.');
+      trackEvent('reservation_cancelled', { flow: 'group' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [cancelPayment, result?.group_id, handlePaid, resetPayment]);
+
+  const formHasData = Object.keys(EMPTY_CAPTAIN).some(k => captain[k] !== EMPTY_CAPTAIN[k])
+    || participants.length !== 2
+    || participants.some(p => BLANK_PARTICIPANT_FIELDS.some(([k, v]) => p[k] !== v))
+    || !!couponCode || waiversAccepted || authorityConfirmed;
+
+  const clearForm = () => {
+    if (!window.confirm('Clear the coordinator details and the whole roster, and start a new group?')) return;
+    setCaptain(EMPTY_CAPTAIN);
+    setParticipants([newParticipant(), newParticipant()]);
+    setCouponCode('');
+    setWaiversAccepted(false);
+    setAuthorityConfirmed(false);
+    setQuote(null);
+    setErrors({});
+    setSubmitError('');
+    setNotice('');
+    localStorage.removeItem(DRAFT_KEY);
+    setStep(1);
+    trackEvent('group_form_cleared', {});
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   /* ── Step 3: confirm ──────────────────────────────────────────────────── */
 
   const submitGroup = async (e) => {
@@ -502,7 +620,6 @@ export default function GroupRegister() {
       });
 
       setResult(saved);
-      localStorage.removeItem(DRAFT_KEY);
       trackEvent('group_registration_completed', {
         participants: saved?.participant_count,
         total: saved?.total,
@@ -510,6 +627,21 @@ export default function GroupRegister() {
       });
       setStep(4);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // One payment for the whole group, by the coordinator. The draft is kept
+      // until it lands, so a lapsed reservation does not cost the roster.
+      if (saved?.payment_status === 'PENDING' && saved?.payment_due_at) {
+        const prefill = {
+          name: `${captain.firstName.trim()} ${captain.lastName.trim()}`.trim(),
+          email: captain.email.trim(),
+          contact: captain.phone.trim(),
+        };
+        setPayer(prefill);
+        savePendingPayment('GROUP', { result: saved, prefill, dueAt: saved.payment_due_at });
+        startPayment(saved, prefill);
+      } else {
+        localStorage.removeItem(DRAFT_KEY);
+      }
     } catch (err) {
       setSubmitError(err.message);
 
@@ -548,6 +680,9 @@ export default function GroupRegister() {
   };
 
   /* ── Render ───────────────────────────────────────────────────────────── */
+
+  const awaitingPayment = result?.payment_status === 'PENDING'
+    && !!result?.payment_due_at && payPhase !== 'offline';
 
   if (!isLoaded) {
     return (
@@ -592,6 +727,14 @@ export default function GroupRegister() {
               </li>
             ))}
           </ol>
+        )}
+
+        {step < 4 && formHasData && (
+          <div className="reg-toolbar">
+            <button type="button" className="reg-clear-btn" onClick={clearForm}>
+              <RotateCcw size={14} aria-hidden="true" /> Clear form
+            </button>
+          </div>
         )}
 
         <div className="reg-shell glass" ref={formRef}>
@@ -647,10 +790,37 @@ export default function GroupRegister() {
               isSubmitting={isSubmitting}
               submitError={submitError}
               formatCurrency={formatCurrency}
+              onlinePayment={onlinePayment}
+              holdMinutes={eventConfig?.payment_hold_minutes}
             />
           )}
 
-          {step === 4 && (
+          {step === 4 && awaitingPayment && (
+            <PaymentPanel
+              amount={result.total}
+              dueAt={result.payment_due_at}
+              summary={[
+                { label: 'Group reference', value: result.group_code },
+                { label: 'Participants', value: result.participant_count },
+                { label: 'Entry fees', value: formatCurrency(result.subtotal) },
+                ...(Number(result.discount) > 0
+                  ? [{ label: `Discount (${result.coupon_code})`, value: `− ${formatCurrency(result.discount)}` }]
+                  : []),
+              ]}
+              phase={payPhase}
+              message={payMessage}
+              paymentId={paymentId}
+              onPay={() => startPayment(result, payer || { email: result.captain_email })}
+              onRecheck={recheckPayment}
+              onStartOver={startOver}
+              onCancel={cancelReservation}
+              formatCurrency={formatCurrency}
+              contactEmail={eventConfig?.contact_email}
+              contactPhone={eventConfig?.contact_phone}
+            />
+          )}
+
+          {step === 4 && !awaitingPayment && (
             <GroupSuccess
               result={result}
               eventName={eventConfig?.name || CURRENT_EVENT.name}

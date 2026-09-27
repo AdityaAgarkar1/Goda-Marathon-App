@@ -9,6 +9,7 @@ import EventStructuredData from '../components/EventStructuredData';
 import { CountdownTimer } from '../components/CountdownTimer';
 import { TestimonialCarousel } from '../components/TestimonialCarousel';
 import { FaqAccordion } from '../components/FaqAccordion';
+import { HeroImage } from '../components/HeroImage';
 
 import { getCurrentEvent } from '../utils/services/events';
 import { getEventCategories } from '../utils/services/categories';
@@ -173,17 +174,19 @@ export default function Home() {
       <EventStructuredData event={e} categories={categories} />
 
       {/* Hero Section */}
-      <section className="hero">
-        <img src={e.hero_image || '/images/trail_hero.png'} alt="" className="hero-bg" />
+      <section className="hero hero--home">
+        {/* Drawn at ~130vw on phones: the photo band there is shallower than
+            the screen is wide, and cover scales the photo to its height. */}
+        <HeroImage src={e.hero_image} className="hero-bg" sizes="(max-width: 767px) 130vw, 100vw" />
         <div className="hero-overlay"></div>
         <div className="container hero-content text-center" style={{ margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <motion.span initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="badge badge-primary" style={{ marginBottom: '24px', fontSize: '1rem', padding: '8px 16px' }}>
+          <motion.span initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="badge badge-primary hero-badge">
             {e.edition ? `${e.edition} Edition` : 'Upcoming Event'}
           </motion.span>
-          <motion.h1 initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }} style={{ fontSize: 'clamp(3rem, 8vw, 6rem)', marginBottom: '16px', letterSpacing: '-2px', textTransform: 'uppercase' }}>
+          <motion.h1 initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }} className="hero-title">
             <HeroHeadline text={e.hero_headline || FALLBACK_EVENT.hero_headline} />
           </motion.h1>
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-muted" style={{ fontSize: '1.25rem', maxWidth: '600px', marginBottom: '40px' }}>
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-muted hero-subcopy">
             {e.hero_subcopy || e.description || FALLBACK_EVENT.hero_subcopy}
           </motion.p>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto px-4 sm:px-0 justify-center">

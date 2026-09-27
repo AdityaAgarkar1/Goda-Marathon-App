@@ -563,6 +563,133 @@
 
 .reg-success-contact a { color: var(--color-primary); font-weight: 600; }
 
+/* ── Payment step ───────────────────────────────────────────────────────── */
+/* Between "reserved" and "confirmed". Built on the success-screen layout so
+   the page does not jump when payment lands and the success screen replaces
+   it. */
+.reg-pay-icon { color: var(--color-primary); margin: 0 auto 1.25rem; }
+.reg-pay-icon--warn { color: var(--color-accent); }
+
+.reg-pay .reg-success-contact {
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+  border-top: none;
+}
+
+.reg-pay-timer,
+.reg-pay-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 auto 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.reg-pay-timer { color: var(--color-accent); }
+.reg-pay-status { color: var(--color-text-main); display: flex; justify-content: center; }
+
+.reg-pay-message {
+  max-width: 480px;
+  margin: 0 auto 1.25rem;
+  text-align: left;
+}
+
+.reg-pay-message span { font-size: 0.88rem; line-height: 1.6; }
+.reg-pay-message.reg-payment-note span { color: var(--color-text-muted); }
+
+.reg-pay .reg-actions .btn { display: inline-flex; align-items: center; gap: 8px; }
+
+.reg-pay-secure {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  max-width: 440px;
+  margin: 0.5rem auto 0;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+.reg-pay-secure svg { flex-shrink: 0; margin-top: 3px; }
+
+/* Quiet on purpose: the page's job is to get the runner paid, and an escape
+   hatch should be findable, not compete with the Pay button. */
+.reg-pay-cancel {
+  display: block;
+  margin: 0.25rem auto 1rem;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.reg-pay-cancel:hover:not(:disabled) { color: var(--color-text-main); }
+.reg-pay-cancel:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.reg-pay-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.reg-pay-confirm {
+  max-width: 480px;
+  margin: 0 auto 1.25rem;
+  padding: 16px 18px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 107, 0, 0.06);
+  border: 1px solid rgba(255, 107, 0, 0.3);
+  text-align: left;
+}
+
+.reg-pay-confirm p {
+  margin: 0 0 14px;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.reg-pay-confirm p strong { color: var(--color-text-main); }
+
+.reg-pay-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .reg-pay-confirm-actions > * { flex: 1 1 100%; }
+}
+
+/* ── Clear form ─────────────────────────────────────────────────────────── */
+.reg-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.reg-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reg-clear-btn:hover { color: var(--color-text-main); border-color: var(--color-border); }
+.reg-clear-btn:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
 /* ── Coupon result on the confirm step ──────────────────────────────────── */
 /* The code used to be stored and shown as "checked by organisers". It is now
    priced by the database before submission, so the summary has a discount line

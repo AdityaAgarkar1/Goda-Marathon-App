@@ -25,14 +25,16 @@ const DECLARATIONS = [
 /**
  * Step 3 — declarations, then submit.
  *
- * There is no payment integration behind this. The button therefore does not
- * pretend to take money: it records the entry with payment_status PENDING and
- * says so plainly, rather than the previous flow's two-second fake delay
- * followed by a "Registration Confirmed!" screen.
+ * With online payment on, submitting reserves the place and opens Razorpay
+ * Checkout; the note below says so, including how long the place is held.
+ * With it off, the button records the entry as PENDING and says plainly that
+ * the organisers collect payment -- rather than the old flow's two-second fake
+ * delay followed by a "Registration Confirmed!" screen.
  */
 export default function StepConfirm({
   formData, waivers, errors, category, couponQuote,
   onWaiverChange, onBack, onSubmit, isSubmitting, formatCurrency, submitError,
+  onlinePayment = false, holdMinutes = 30,
 }) {
   const price = category?.price ?? 0;
 
@@ -119,14 +121,30 @@ export default function StepConfirm({
 
       <div className="reg-payment-note">
         <Info size={18} aria-hidden="true" />
-        <div>
-          <strong>Payment is collected separately.</strong>
-          <p>
-            Submitting this form reserves your entry and records it as <em>payment pending</em>.
-            The organisers will contact you at <strong>{formData.email || 'your email'}</strong> with
-            payment instructions. Your place is confirmed once payment is received.
-          </p>
-        </div>
+        {onlinePayment && total > 0 ? (
+          <div>
+            <strong>Pay securely online.</strong>
+            <p>
+              Continuing reserves your place for {holdMinutes} minutes and opens a
+              secure Razorpay checkout for <strong>{formatCurrency(total)}</strong>.
+              Your entry is confirmed the moment payment goes through.
+            </p>
+          </div>
+        ) : onlinePayment ? (
+          <div>
+            <strong>Nothing to pay.</strong>
+            <p>Your entry is confirmed as soon as you submit.</p>
+          </div>
+        ) : (
+          <div>
+            <strong>Payment is collected separately.</strong>
+            <p>
+              Submitting this form reserves your entry and records it as <em>payment pending</em>.
+              The organisers will contact you at <strong>{formData.email || 'your email'}</strong> with
+              payment instructions. Your place is confirmed once payment is received.
+            </p>
+          </div>
+        )}
       </div>
 
       {submitError && (
@@ -139,7 +157,11 @@ export default function StepConfirm({
       <div className="reg-actions">
         <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>Back</Button>
         <Button type="submit" variant="primary" disabled={isSubmitting}>
-          {isSubmitting ? 'Submitting…' : 'Submit registration'}
+          {isSubmitting
+            ? 'Reserving your place…'
+            : onlinePayment && total > 0
+              ? `Continue to payment — ${formatCurrency(total)}`
+              : 'Submit registration'}
         </Button>
       </div>
     </form>
