@@ -10,10 +10,12 @@ import { CountdownTimer } from '../components/CountdownTimer';
 import { TestimonialCarousel } from '../components/TestimonialCarousel';
 import { FaqAccordion } from '../components/FaqAccordion';
 import { HeroImage } from '../components/HeroImage';
+import { HeroHeadline, DEFAULT_HERO_HEADLINE } from '../components/HeroHeadline';
 
 import { getCurrentEvent } from '../utils/services/events';
 import { getEventCategories } from '../utils/services/categories';
 import { CURRENT_EVENT } from '../utils/constants';
+import { formatHeroDate, buildCountdownTarget } from '../utils/dates';
 
 // Used only when the DB is unreachable or holds no current event, so the
 // landing page degrades to the previous static content instead of blanking.
@@ -24,39 +26,10 @@ const FALLBACK_EVENT = {
   flag_off_time: '06:45 AM',
   location: 'Girnare, Nashik',
   hero_image: '/images/trail_hero.png',
-  hero_headline: 'RUN BEYOND LIMITS',
+  hero_headline: DEFAULT_HERO_HEADLINE,
   hero_subcopy: 'Push past your limits at the Goda Epic Trail Run 2026. Join us for the ultimate test of endurance, spirit, and connection with nature in the scenic Gangapur Backwaters.',
   registration_open: true,
 };
-
-/** "2026-08-09" → "AUG 09, 2026" */
-function formatHeroDate(dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(`${dateStr}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return '';
-  const month = d.toLocaleDateString('en-IN', { month: 'short' }).toUpperCase();
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${month} ${day}, ${d.getFullYear()}`;
-}
-
-/**
- * Combine the event date with its flag-off time into a value the countdown can
- * parse. Left in local time deliberately — the race starts at 06:45 in Nashik,
- * not 06:45 UTC.
- */
-function buildCountdownTarget(dateStr, flagOff) {
-  if (!dateStr) return null;
-  const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i.exec((flagOff || '').trim());
-  if (!match) return `${dateStr}T00:00:00`;
-
-  let hours = parseInt(match[1], 10);
-  const minutes = match[2];
-  const meridiem = match[3]?.toUpperCase();
-  if (meridiem === 'PM' && hours !== 12) hours += 12;
-  if (meridiem === 'AM' && hours === 12) hours = 0;
-
-  return `${dateStr}T${String(hours).padStart(2, '0')}:${minutes}:00`;
-}
 
 /** Category price in rupees, no decimals. */
 function formatPrice(value) {
@@ -71,20 +44,6 @@ function formatPrice(value) {
 function toNumber(value) {
   const n = parseFloat(String(value ?? '').replace(/[^\d.]/g, ''));
   return Number.isFinite(n) ? n : 0;
-}
-
-/** Renders the headline with its final word highlighted. */
-function HeroHeadline({ text }) {
-  // filter(Boolean) matters: ''.split(/\s+/) yields [''], not [].
-  const words = (text || '').trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return null;
-  const last = words.pop();
-  return (
-    <>
-      {words.length > 0 && `${words.join(' ')} `}
-      <span className="gradient-text">{last}</span>
-    </>
-  );
 }
 
 export default function Home() {

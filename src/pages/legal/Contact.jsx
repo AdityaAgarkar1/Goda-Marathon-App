@@ -28,7 +28,7 @@ export default function Contact() {
   }, []);
 
   const email = event?.contact_email || ORGANISATION.email;
-  const phone = event?.contact_phone || ORGANISATION.phone;
+  // const phone = event?.contact_phone || ORGANISATION.phone;
 
   return (
     <LegalPage
@@ -49,13 +49,14 @@ export default function Contact() {
             <a href={`mailto:${email}`}>{email}</a>
           </div>
         </li>
-        <li>
+        {/* TODO : The contact number is not to be used anywhere */}
+        {/* <li>
           <Phone size={18} aria-hidden="true" />
           <div>
             <span className="legal-contact-label">Phone</span>
             <a href={`tel:${phone.replace(/\s+/g, '')}`}>{phone}</a>
           </div>
-        </li>
+        </li> */}
         <li>
           <MapPin size={18} aria-hidden="true" />
           <div>

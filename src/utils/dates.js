@@ -66,3 +66,32 @@ export function toInputDate(value) {
 export function sanitizeYear(value) {
   return String(value ?? '').replace(/\D/g, '').slice(0, 4);
 }
+
+/** "2026-08-09" → "AUG 09, 2026", as the homepage hero shows the race date. */
+export function formatHeroDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return '';
+  const month = d.toLocaleDateString('en-IN', { month: 'short' }).toUpperCase();
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${month} ${day}, ${d.getFullYear()}`;
+}
+
+/**
+ * Combine the event date with its flag-off time into a value the countdown can
+ * parse. Left in local time deliberately — the race starts at 06:45 in Nashik,
+ * not 06:45 UTC.
+ */
+export function buildCountdownTarget(dateStr, flagOff) {
+  if (!dateStr) return null;
+  const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i.exec((flagOff || '').trim());
+  if (!match) return `${dateStr}T00:00:00`;
+
+  let hours = parseInt(match[1], 10);
+  const minutes = match[2];
+  const meridiem = match[3]?.toUpperCase();
+  if (meridiem === 'PM' && hours !== 12) hours += 12;
+  if (meridiem === 'AM' && hours === 12) hours = 0;
+
+  return `${dateStr}T${String(hours).padStart(2, '0')}:${minutes}:00`;
+}

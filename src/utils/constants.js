@@ -16,25 +16,27 @@ export const ORGANISATION = {
   phone: '+91 82085 92273',
   address: 'Tidke Colony, Nashik, Maharashtra, India',
   jurisdiction: 'Nashik, Maharashtra',
-  instagram: 'https://www.instagram.com/godavari_expedition/',
-  facebook: 'https://www.facebook.com/godavariexpedition/',
+  instagram: 'https://www.instagram.com/godavariexpedition/',
+  facebook: 'https://www.facebook.com/profile.php?id=61572634532190',
 };
 
 // ─── LEGACY FALLBACKS ────────────────────────────────────────
 // These are used ONLY when the DB (event_categories table) is empty.
 // All category data is now managed via Admin → Categories tab.
 export const CATEGORY_PRICING = {
-  "5K Run": 499,
-  "10K Run": 799,
-  "Half Marathon": 1299,
-  "Full Marathon": 1599
+  "3K Run": 599,
+  "5K Run": 799,
+  "10K Run": 1299,
+  "15K Marathon": 2249,
+  "Half Marathon": 2599
 };
 
 export const CATEGORY_RULES = {
-  "5K Run": { minAge: 5 },
-  "10K Run": { minAge: 12 },
-  "Half Marathon": { minAge: 18 },
-  "Full Marathon": { minAge: 18 }
+  "3K Run": { minAge: 5 },
+  "5K Run": { minAge: 7 },
+  "10K Run": { minAge: 15 },
+  "15K Run": { minAge: 15 },
+  "Half Marathon": { minAge: 18 }
 };
 
 // Human-readable event identifier for routing and the registrations table.

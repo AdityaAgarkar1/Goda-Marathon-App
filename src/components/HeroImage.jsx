@@ -1,9 +1,8 @@
 import React from 'react';
 import { getDriveFileId, resolveImageUrl } from '../utils/mediaUrl';
+import { VARIANT_WIDTHS, parseUploadedHero } from '../utils/heroVariants';
 
 export const DEFAULT_HERO_IMAGE = '/images/trail_hero.png';
-
-const VARIANT_WIDTHS = [640, 960, 1280, 1920, 2560];
 
 /**
  * Web-sized copies of the hero photos that ship in /public, keyed by the path
@@ -16,14 +15,18 @@ const VARIANT_WIDTHS = [640, 960, 1280, 1920, 2560];
  * the runners. Admin-uploaded photos have no entry and stay centred.
  *
  * To add a photo, export it as WebP at each of VARIANT_WIDTHS into
- * /public/images/hero/ as `<name>-<width>.webp`.
+ * /public/images/hero/ as `<name>-<width>.webp`. Photos uploaded from the
+ * admin panel are resized on upload and need nothing here.
  */
 const LOCAL_HEROES = {
   [DEFAULT_HERO_IMAGE]: { stem: '/images/hero/trail_hero', focus: '60% 30%' },
 };
 
-function buildSrcSet(urlForWidth) {
-  return VARIANT_WIDTHS.map(w => `${urlForWidth(w)} ${w}w`).join(', ');
+// The width served to browsers that ignore srcset.
+const FALLBACK_WIDTH = 1920;
+
+function buildSrcSet(widths, urlForWidth) {
+  return widths.map(w => `${urlForWidth(w)} ${w}w`).join(', ');
 }
 
 /**
@@ -37,16 +40,22 @@ function buildSrcSet(urlForWidth) {
 export function HeroImage({ src, className, sizes = '100vw' }) {
   const url = src || DEFAULT_HERO_IMAGE;
   const local = LOCAL_HEROES[url];
+  const uploaded = !local && parseUploadedHero(url);
 
   let fallback = resolveImageUrl(url);
   let srcSet;
   if (local) {
-    fallback = `${local.stem}-1920.webp`;
-    srcSet = buildSrcSet(w => `${local.stem}-${w}.webp`);
+    fallback = `${local.stem}-${FALLBACK_WIDTH}.webp`;
+    srcSet = buildSrcSet(VARIANT_WIDTHS, w => `${local.stem}-${w}.webp`);
+  } else if (uploaded) {
+    // A small upload may stop short of FALLBACK_WIDTH; take the widest it has.
+    const { widths, urlFor } = uploaded;
+    fallback = urlFor(widths.filter(w => w <= FALLBACK_WIDTH).pop() ?? widths[0]);
+    srcSet = buildSrcSet(widths, urlFor);
   } else if (getDriveFileId(url)) {
     // Drive's CDN resizes on request, so a pasted Drive link gets a srcset too.
-    fallback = resolveImageUrl(url, 1920);
-    srcSet = buildSrcSet(w => resolveImageUrl(url, w));
+    fallback = resolveImageUrl(url, FALLBACK_WIDTH);
+    srcSet = buildSrcSet(VARIANT_WIDTHS, w => resolveImageUrl(url, w));
   }
 
   return (

@@ -198,7 +198,7 @@ export default function CategoryManager({ eventId, eventSlug }) {
           </div>
           <div className="admin-media-form-group" style={{ marginTop: '0.75rem' }}>
             <label htmlFor="cat-elev-img">Elevation Profile Image</label>
-            <input id="cat-elev-img" name="elevation_image" value={formData.elevation_image} onChange={handleInput} placeholder="/images/elevation_5km.png" />
+            <input id="cat-elev-img" name="elevation_image" value={formData.elevation_image} onChange={handleInput} placeholder="https://… link to the route profile image" />
             <span className="admin-field-hint">Revealed by the card&apos;s &ldquo;View Route&rdquo; toggle. Leave empty to hide the toggle.</span>
           </div>
 

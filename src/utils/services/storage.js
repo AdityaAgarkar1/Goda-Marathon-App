@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { HERO_FOLDER, parseUploadedHero } from '../heroVariants';
 
 // TODO: [AUTH] Uploads currently go through the anon key, matching the rest of
 // the admin panel. Tighten the bucket policies alongside real admin auth.
@@ -22,9 +23,8 @@ function safeFolder(folder) {
 }
 
 /** Filenames become URLs — strip anything that would need escaping. */
-function safeName(name) {
+function safeStem(name) {
   const dot = name.lastIndexOf('.');
-  const ext = dot > -1 ? name.slice(dot + 1).toLowerCase() : 'jpg';
   const stem = (dot > -1 ? name.slice(0, dot) : name)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
@@ -32,7 +32,22 @@ function safeName(name) {
     .slice(0, 60) || 'photo';
   // Collisions would otherwise overwrite an existing photo silently.
   const unique = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
-  return `${stem}-${unique}.${ext}`;
+  return `${stem}-${unique}`;
+}
+
+function safeName(name) {
+  const dot = name.lastIndexOf('.');
+  const ext = dot > -1 ? name.slice(dot + 1).toLowerCase() : 'jpg';
+  return `${safeStem(name)}.${ext}`;
+}
+
+function describeStorageError(error) {
+  if (/bucket not found/i.test(error?.message || '')) {
+    return new Error(
+      'Storage bucket "past-events" does not exist. Run migration 0003_past_events.sql first.'
+    );
+  }
+  return error;
 }
 
 export function validateFile(file) {
@@ -62,14 +77,7 @@ export const uploadMedia = async (file, folder) => {
     .from(BUCKET)
     .upload(storagePath, file, { cacheControl: '31536000', upsert: false });
 
-  if (error) {
-    if (/bucket not found/i.test(error.message)) {
-      throw new Error(
-        'Storage bucket "past-events" does not exist. Run migration 0003_past_events.sql first.'
-      );
-    }
-    throw error;
-  }
+  if (error) throw describeStorageError(error);
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
   return {
@@ -87,12 +95,64 @@ export const deleteStoredMedia = async (storagePath) => {
 };
 
 /**
+ * Upload a hero photo already resized by resizeHero(). Returns the public URL
+ * of the widest file, which is the one to store on the event row.
+ *
+ * All or nothing: a set missing a width would leave holes in the srcset, so if
+ * any file fails the ones that made it are removed again.
+ */
+export const uploadHeroVariants = async (resized, originalName) => {
+  const dir = `${HERO_FOLDER}/${safeStem(originalName || 'hero')}`;
+  const pathFor = (width) => `${dir}/${width}.${resized.ext}`;
+
+  const results = await Promise.all(resized.variants.map(({ width, blob }) =>
+    supabase.storage
+      .from(BUCKET)
+      .upload(pathFor(width), blob, {
+        contentType: resized.contentType,
+        cacheControl: '31536000',
+        upsert: false,
+      })
+      .then(({ error }) => ({ width, error }), error => ({ width, error }))
+  ));
+
+  const failed = results.find(r => r.error);
+  if (failed) {
+    const uploaded = results.filter(r => !r.error).map(r => pathFor(r.width));
+    if (uploaded.length) await supabase.storage.from(BUCKET).remove(uploaded);
+    throw describeStorageError(failed.error);
+  }
+
+  return supabase.storage.from(BUCKET).getPublicUrl(pathFor(resized.width)).data.publicUrl;
+};
+
+/**
+ * Remove the file(s) behind one of our public URLs: every width of an uploaded
+ * hero, or the single file of any other upload. Does nothing for a URL we do
+ * not host, and never throws -- callers use it to tidy up after a save.
+ */
+export const deleteStoredImageAt = async (url) => {
+  const hero = parseUploadedHero(url);
+  const paths = (hero ? hero.widths.map(hero.urlFor) : [url])
+    .map(storagePathFromPublicUrl)
+    .filter(Boolean);
+  if (!paths.length) return;
+
+  try {
+    const { error } = await supabase.storage.from(BUCKET).remove(paths);
+    if (error) throw error;
+  } catch (error) {
+    console.error('Failed to remove stored files', paths, error);
+  }
+};
+
+/**
  * Recover the object path from one of our own public URLs.
  *
- * Lets a replaced cover image be deleted without storing its path in a column
- * of its own — past_events keeps only cover_image. Returns null for anything
- * that is not a file in this bucket (a Drive link, a /images path), so callers
- * never try to delete something they do not own.
+ * Lets a replaced hero photo be deleted without storing its path in a column
+ * of its own — events keeps only hero_image. Returns null for anything that is
+ * not a file in this bucket (a Drive link, a /images path), so callers never
+ * try to delete something they do not own.
  */
 export const storagePathFromPublicUrl = (url) => {
   if (!url) return null;

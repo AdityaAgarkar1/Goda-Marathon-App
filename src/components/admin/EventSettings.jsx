@@ -1,21 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { Save, RefreshCw, CheckCircle } from 'lucide-react';
 import { getCurrentEvent, updateEvent } from '../../utils/services/events';
+import { getEventCategories } from '../../utils/services/categories';
+import { uploadHeroVariants, deleteStoredImageAt } from '../../utils/services/storage';
 import { describeSaveError } from '../../utils/services/errors';
+import { formatHeroDate, buildCountdownTarget } from '../../utils/dates';
+import { DEFAULT_HERO_HEADLINE } from '../HeroHeadline';
+import HeroImageField from './HeroImageField';
+import HeroPreview from './HeroPreview';
 
 export default function EventSettings() {
   const [eventData, setEventData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
+  // The hero URL the row holds right now, and a resized photo waiting for Save.
+  const [savedHero, setSavedHero] = useState(null);
+  const [pendingHero, setPendingHero] = useState(null);
+  const [categoryCount, setCategoryCount] = useState(0);
 
   useEffect(() => { loadEvent(); }, []);
+
+  // Free the preview's in-memory copy once it is replaced, discarded or saved.
+  useEffect(() => () => {
+    if (pendingHero) URL.revokeObjectURL(pendingHero.previewUrl);
+  }, [pendingHero]);
 
   const loadEvent = async () => {
     setIsLoading(true);
     const data = await getCurrentEvent();
     setEventData(data);
+    setSavedHero(data?.hero_image ?? null);
     setIsLoading(false);
+    if (data?.id) {
+      const categories = await getEventCategories(data.id, data.id);
+      setCategoryCount(categories.length);
+    }
+  };
+
+  const setHeroImage = (url) => {
+    setEventData(prev => ({ ...prev, hero_image: url }));
+    setSaveMsg('');
+  };
+
+  const setPendingHeroPhoto = (pending) => {
+    setPendingHero(pending);
+    setSaveMsg('');
   };
 
   const handleInput = (e) => {
@@ -33,7 +63,14 @@ export default function EventSettings() {
     if (!eventData) return;
     setIsSaving(true);
     setSaveMsg('');
+    let uploadedHero = null;
     try {
+      let heroImage = eventData.hero_image;
+      if (pendingHero) {
+        uploadedHero = await uploadHeroVariants(pendingHero.resized, pendingHero.fileName);
+        heroImage = uploadedHero;
+      }
+
       const hold = parseInt(eventData.payment_hold_minutes, 10);
       await updateEvent(eventData.id, {
         ...(hasPaymentSettings ? {
@@ -50,7 +87,7 @@ export default function EventSettings() {
         flag_off_time: eventData.flag_off_time,
         registration_open: eventData.registration_open,
         edition: eventData.edition,
-        hero_image: eventData.hero_image,
+        hero_image: heroImage,
         hero_headline: eventData.hero_headline || null,
         hero_subcopy: eventData.hero_subcopy || null,
         last_registration_date: eventData.last_registration_date || null,
@@ -58,8 +95,16 @@ export default function EventSettings() {
         contact_email: eventData.contact_email || null,
         contact_phone: eventData.contact_phone || null,
       });
+
+      // The row no longer points at the old photo; remove it if we host it.
+      if (savedHero && savedHero !== heroImage) deleteStoredImageAt(savedHero);
+      setSavedHero(heroImage);
+      setEventData(prev => ({ ...prev, hero_image: heroImage }));
+      setPendingHero(null);
       setSaveMsg('Event settings saved successfully!');
     } catch (err) {
+      // The row still points at the old photo, so the new files are orphans.
+      if (uploadedHero) deleteStoredImageAt(uploadedHero);
       setSaveMsg(describeSaveError(err, 'event settings'));
     } finally {
       setIsSaving(false);
@@ -79,7 +124,9 @@ export default function EventSettings() {
         <h3 style={{ margin: 0 }}>Event Settings</h3>
         <button className="btn btn-primary admin-action-btn" onClick={handleSave} disabled={isSaving} style={{ gap: '6px' }}>
           {isSaving ? <RefreshCw size={18} className="spin" /> : <Save size={18} />}
-          <span className="admin-action-label">{isSaving ? 'Saving...' : 'Save Changes'}</span>
+          <span className="admin-action-label">
+            {isSaving ? (pendingHero ? 'Uploading photo...' : 'Saving...') : 'Save Changes'}
+          </span>
         </button>
       </div>
 
@@ -120,17 +167,21 @@ export default function EventSettings() {
         </div>
 
         <div className="admin-media-form-group" style={{ marginTop: '0.75rem' }}>
-          <label htmlFor="evt-hero">Hero Image URL</label>
-          <input id="evt-hero" name="hero_image" value={eventData.hero_image || ''} onChange={handleInput} placeholder="/images/trail_hero.png" />
-        </div>
-        <div className="admin-media-form-group" style={{ marginTop: '0.75rem' }}>
           <label htmlFor="evt-desc">Description</label>
           <textarea id="evt-desc" name="description" value={eventData.description || ''} onChange={handleInput} rows={3} style={{ resize: 'vertical' }} />
         </div>
 
         {/* Homepage Hero */}
         <h4 className="admin-form-section-title" style={{ marginTop: '1.5rem' }}>Homepage Hero</h4>
-        <div className="admin-media-form-group">
+        <HeroImageField
+          value={eventData.hero_image}
+          savedValue={savedHero}
+          pending={pendingHero}
+          onPending={setPendingHeroPhoto}
+          onChange={setHeroImage}
+          disabled={isSaving}
+        />
+        <div className="admin-media-form-group" style={{ marginTop: '0.75rem' }}>
           <label htmlFor="evt-hero-headline">Hero Headline</label>
           <input id="evt-hero-headline" name="hero_headline" value={eventData.hero_headline || ''} onChange={handleInput} placeholder="RUN BEYOND LIMITS" />
           <span className="admin-field-hint">Displayed uppercase on the homepage. The last word is highlighted automatically.</span>
@@ -139,6 +190,25 @@ export default function EventSettings() {
           <label htmlFor="evt-hero-subcopy">Hero Sub-copy</label>
           <textarea id="evt-hero-subcopy" name="hero_subcopy" value={eventData.hero_subcopy || ''} onChange={handleInput} rows={3} style={{ resize: 'vertical' }} placeholder="Push past your limits at…" />
           <span className="admin-field-hint">Paragraph under the headline. Falls back to Description if left empty.</span>
+        </div>
+
+        <div className="admin-hero-preview">
+          <span className="admin-image-field-label">Preview</span>
+          <HeroPreview
+            image={pendingHero?.previewUrl || eventData.hero_image}
+            headline={eventData.hero_headline || DEFAULT_HERO_HEADLINE}
+            subcopy={eventData.hero_subcopy || eventData.description}
+            badge={eventData.edition ? `${eventData.edition} Edition` : 'Upcoming Event'}
+            date={formatHeroDate(eventData.date)}
+            countdownTarget={buildCountdownTarget(eventData.date, eventData.flag_off_time)}
+            location={eventData.location}
+            registrationOpen={eventData.registration_open}
+            categoryCount={categoryCount}
+          />
+          <span className="admin-field-hint">
+            Updates as you edit, before you save. Screens vary, so the crop on a real device can
+            differ slightly; check the homepage after saving.
+          </span>
         </div>
 
         {/* Registration Config */}

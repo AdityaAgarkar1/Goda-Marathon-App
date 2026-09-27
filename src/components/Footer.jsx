@@ -87,8 +87,8 @@ export default function Footer() {
               <li><Link to="/contact">Contact Us</Link></li>
               {/* Was href="#". The FAQ is a section on the homepage. */}
               <li><Link to="/#faq">FAQ</Link></li>
-              <li><a href={`tel:${ORGANISATION.phone.replace(/\s+/g, '')}`}>{ORGANISATION.phone}</a></li>
-              <li><a href={`mailto:${ORGANISATION.email}`}>{ORGANISATION.email}</a></li>
+              {/* <li><a href={`tel:${ORGANISATION.phone.replace(/\s+/g, '')}`}>{ORGANISATION.phone}</a></li> */}
+              {/* <li><a href={`mailto:${ORGANISATION.email}`}>{ORGANISATION.email}</a></li> */}
               <li className="text-muted" style={{ fontSize: '0.9rem' }}>{ORGANISATION.address}</li>
             </ul>
           </div>

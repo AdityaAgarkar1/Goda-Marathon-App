@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Camera, Video, Users, MapPin, Calendar, ChevronLeft, ChevronRight, X, ImageOff } from 'lucide-react';
 import { getPastEventMedia } from '../utils/services/media';
 import { getPublishedPastEvents } from '../utils/services/pastEvents';
+import { getCurrentEvent } from '../utils/services/events';
 import { resolveImageUrl, getYouTubeId } from '../utils/mediaUrl';
 import { formatDisplayDate } from '../utils/dates';
 import Seo from '../components/Seo';
@@ -21,12 +22,8 @@ const FALLBACK_EVENT = {
 };
 
 const FALLBACK_IMAGES = [
-  { url: '/images/trail_hero.png', caption: 'The starting line at dawn' },
-  { url: '/images/trail_event1.png', caption: 'Runners on the scenic trail' },
+  { url: '/images/hero/trail_hero-1920.webp', caption: 'The starting line at dawn' },
   { url: '/images/trail_event2.png', caption: 'The finish line celebrations' },
-  { url: '/images/event1.png', caption: 'Community spirit on display' },
-  { url: '/images/event2.png', caption: 'Post-race celebrations' },
-  { url: '/images/hero.png', caption: 'The trail awaits' },
 ].map((img, i) => ({ ...img, id: `fallback-${i}`, media_type: 'image' }));
 
 function Lightbox({ images, currentIndex, onClose, onNext, onPrev }) {
@@ -129,6 +126,17 @@ export default function PastEvents() {
   const [isLoadingMedia, setIsLoadingMedia] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  // The homepage hero, set in Event Settings. Nothing until it is known:
+  // rendering the default first meant downloading it only to swap it out.
+  const [heroImage, setHeroImage] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCurrentEvent().then(ev => {
+      if (!cancelled) setHeroImage(ev?.hero_image || DEFAULT_HERO_IMAGE);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -197,16 +205,12 @@ export default function PastEvents() {
   const nextImage = useCallback(() => setLightboxIndex(p => (p + 1) % images.length), [images.length]);
   const prevImage = useCallback(() => setLightboxIndex(p => (p - 1 + images.length) % images.length), [images.length]);
 
-  // Nothing until the editions load: rendering the default first meant every
-  // visit downloaded it only to swap it for the edition's own cover.
-  const heroImage = isLoading ? null : (currentEvent.cover_image || DEFAULT_HERO_IMAGE);
-
   return (
     <div className="past-events-page">
       <Seo
         title="Past Events"
         description="Photos and video from previous editions of the GODA Epic Trail Run in the Gangapur Backwaters near Nashik."
-        image={currentEvent.cover_image}
+        image={heroImage}
       />
       <div className="pe-hero">
         {heroImage && (

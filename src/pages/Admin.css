@@ -1679,7 +1679,7 @@
 }
 
 /* ========================================
-   Single-image upload field
+   Image field: label, action buttons and URL entry
    ======================================== */
 .admin-image-field {
   display: block;
@@ -1693,88 +1693,10 @@
   color: var(--color-text-muted);
 }
 
-.admin-dropzone--compact {
-  padding: 1.25rem 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.admin-dropzone--compact .admin-dropzone-title {
-  font-size: 0.85rem;
-}
-
-/* Chosen image */
-.admin-image-preview {
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.admin-image-preview img {
-  display: block;
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
-  background: var(--color-bg-surface);
-}
-
-.admin-image-preview-broken {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 180px;
-  color: var(--color-text-muted);
-  font-size: 0.8rem;
-}
-
-.admin-image-preview-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  flex-wrap: wrap;
-}
-
-.admin-image-preview-name {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-  flex: 1;
-}
-
 .admin-image-preview-actions {
   display: flex;
   gap: 6px;
   flex-shrink: 0;
-}
-
-/* "or use a URL instead" */
-.admin-image-url-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 0;
-  background: none;
-  border: none;
-  color: var(--color-text-muted);
-  font-family: var(--font-family);
-  font-size: 0.78rem;
-  font-weight: 500;
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  transition: color var(--transition-fast);
-}
-
-.admin-image-url-toggle:hover {
-  color: var(--color-primary);
 }
 
 .admin-image-url-row {
@@ -1787,6 +1709,372 @@
   flex: 1;
   min-width: 0;
   font-size: 0.85rem;
+}
+
+/* ========================================
+   Hero photo field (Event Settings)
+   ======================================== */
+.admin-hero-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border: 1px dashed var(--color-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.admin-hero-field.is-dragging {
+  border-color: var(--color-primary);
+  background: rgba(69, 229, 44, 0.06);
+}
+
+.admin-hero-field-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.admin-hero-field-title,
+.admin-hero-field-detail {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-hero-field-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.admin-hero-field-title svg {
+  vertical-align: -2px;
+  margin-right: 6px;
+}
+
+.admin-hero-field-detail {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.admin-hero-field-badge {
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 107, 0, 0.12);
+  border: 1px solid rgba(255, 107, 0, 0.3);
+  color: var(--color-accent);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.admin-hero-field-actions {
+  flex-wrap: wrap;
+}
+
+.admin-hero-field-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 0.5rem;
+  color: var(--color-accent);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.admin-hero-field-warning svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ========================================
+   Hero preview (Event Settings)
+   The mock-up is laid out at device size inside .hp-canvas and scaled down.
+   .hp-hero restates .hero--home from index.css, desktop and phone layouts
+   both, because the phone one is chosen there by a media query that cannot
+   fire inside this box. Keep the two in step.
+   ======================================== */
+.admin-hero-preview {
+  margin-top: 1.25rem;
+}
+
+.hp-devices {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.hp-device {
+  margin: 0;
+  min-width: 0;
+}
+
+.hp-device--desktop { flex: 1 1 auto; }
+.hp-device--phone { flex: 0 0 170px; }
+
+.hp-device figcaption {
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.hp-frame {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg-base);
+}
+
+.hp-device--phone .hp-frame {
+  border-radius: 18px;
+}
+
+.hp-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (max-width: 560px) {
+  .hp-devices {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hp-device--phone {
+    flex: none;
+    width: 60%;
+    max-width: 240px;
+    align-self: center;
+  }
+}
+
+/* Laptop layout: .hero, .hero-overlay and .hero--home at 1440 px */
+.hp-hero {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-bg-base);
+  color: var(--color-text-main);
+  line-height: 1.6;
+  text-align: center;
+}
+
+.hp-photo,
+.hp-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+
+.hp-photo {
+  object-fit: cover;
+}
+
+.hp-hero--desktop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 96px 0;
+}
+
+.hp-hero--desktop .hp-overlay {
+  background:
+    radial-gradient(90% 70% at 50% 42%,
+      rgba(11, 11, 11, 0.78) 0%,
+      rgba(11, 11, 11, 0.45) 45%,
+      rgba(11, 11, 11, 0.12) 75%,
+      transparent 100%),
+    linear-gradient(180deg,
+      rgba(11, 11, 11, 0.7) 0%,
+      rgba(11, 11, 11, 0.2) 22%,
+      rgba(11, 11, 11, 0.55) 68%,
+      var(--color-bg-base) 100%);
+}
+
+.hp-copy {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.hp-badge {
+  margin-bottom: 24px;
+  font-size: 1rem;
+  padding: 8px 16px;
+}
+
+.hp-title {
+  margin-bottom: 16px;
+  font-size: 96px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -2px;
+  text-transform: uppercase;
+}
+
+.hp-subcopy {
+  max-width: 600px;
+  margin: 0 0 40px;
+  font-size: 1.25rem;
+  color: var(--color-text-muted);
+}
+
+.hp-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+/* .btn is full width below 768 px of viewport; the laptop mock must not be. */
+.hp-btn {
+  width: auto;
+  white-space: nowrap;
+  font-size: 1.125rem;
+  padding: 16px 40px;
+}
+
+.hp-facts {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  width: 100%;
+  max-width: 896px;
+  margin-top: 60px;
+  padding: 24px;
+  border-radius: 16px;
+}
+
+.hp-fact-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Keeps the page's default paragraph margin, as the homepage does, except
+   above the countdown. */
+.hp-fact-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.hp-fact-value.is-flush {
+  margin-bottom: 0;
+}
+
+.hp-fact-value.is-upper {
+  text-transform: uppercase;
+}
+
+.hp-fact-rule {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Phone layout: the "Landing hero on phones" block at 390 px, where the photo
+   band is clamp(300px, 86vw, 460px) = 335 px */
+.hp-hero--phone {
+  --band: 335px;
+  padding: calc(var(--band) * 0.46) 0 64px;
+}
+
+.hp-hero--phone .hp-copy {
+  padding: 0 16px;
+}
+
+.hp-hero--phone .hp-photo,
+.hp-hero--phone .hp-overlay {
+  height: var(--band);
+}
+
+/* A hair longer than the photo: once the mock is scaled, the overlay's bottom
+   edge is antialiased and the photo's last row would show as a bright line. */
+.hp-hero--phone .hp-overlay {
+  height: calc(var(--band) + 2px);
+}
+
+.hp-hero--phone .hp-overlay {
+  background: linear-gradient(180deg,
+    rgba(11, 11, 11, 0.25) 0%,
+    rgba(11, 11, 11, 0) 14%,
+    rgba(11, 11, 11, 0.08) 38%,
+    rgba(11, 11, 11, 0.6) 62%,
+    rgba(11, 11, 11, 0.9) 84%,
+    var(--color-bg-base) 100%);
+}
+
+.hp-hero--phone .hp-badge {
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+  padding: 6px 14px;
+  background:
+    linear-gradient(rgba(69, 229, 44, 0.12), rgba(69, 229, 44, 0.12)),
+    rgba(11, 11, 11, 0.6);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.hp-hero--phone .hp-title {
+  font-size: 48px;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.75), 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.hp-hero--phone .hp-title .gradient-text {
+  text-shadow: none;
+}
+
+.hp-hero--phone .hp-subcopy {
+  font-size: 1.05rem;
+  margin-bottom: 28px;
+}
+
+.hp-hero--phone .hp-actions {
+  flex-direction: column;
+  width: 100%;
+  padding: 0 16px;
+}
+
+.hp-hero--phone .hp-btn {
+  width: 100%;
+}
+
+.hp-hero--phone .hp-facts {
+  flex-direction: column;
+  gap: 32px;
+}
+
+.hp-hero--phone .hp-fact-rule {
+  display: none;
 }
 
 /* Short disambiguator beside the year when editions share one */

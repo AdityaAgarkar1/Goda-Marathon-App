@@ -12,12 +12,11 @@ import {
 } from '../../utils/services/media';
 import { uploadMedia, validateFile, bucketExists } from '../../utils/services/storage';
 import { normalizeMediaUrl, resolveImageUrl, isHotlinkedDrive, getYouTubeId } from '../../utils/mediaUrl';
-import ImageUploadField from './ImageUploadField';
 import { formatDisplayDate, toInputDate, sanitizeYear } from '../../utils/dates';
 
 const emptyEvent = {
   year: '', title: '', edition_label: '', event_date: '', location: '',
-  participants: '', description: '', cover_image: '',
+  participants: '', description: '',
   display_order: 0, is_published: true,
 };
 
@@ -77,7 +76,7 @@ export default function PastEventsManager() {
       year: ev.year || '', title: ev.title || '', edition_label: ev.edition_label || '',
       event_date: toInputDate(ev.event_date),
       location: ev.location || '', participants: ev.participants || '',
-      description: ev.description || '', cover_image: ev.cover_image || '',
+      description: ev.description || '',
       display_order: ev.display_order ?? 0, is_published: ev.is_published !== false,
     });
     setEditingEventId(ev.id);
@@ -89,11 +88,6 @@ export default function PastEventsManager() {
     const { name, value, type, checked } = e.target;
     const next = type === 'checkbox' ? checked : (name === 'year' ? sanitizeYear(value) : value);
     setEventForm(prev => ({ ...prev, [name]: next }));
-    setEventError('');
-  }, []);
-
-  const setCoverImage = useCallback((url) => {
-    setEventForm(prev => ({ ...prev, cover_image: url }));
     setEventError('');
   }, []);
 
@@ -125,7 +119,6 @@ export default function PastEventsManager() {
         location: eventForm.location.trim() || null,
         participants: eventForm.participants.trim() || null,
         description: eventForm.description.trim() || null,
-        cover_image: eventForm.cover_image.trim() || null,
         display_order: parseInt(eventForm.display_order) || 0,
         is_published: eventForm.is_published,
       };
@@ -484,7 +477,6 @@ export default function PastEventsManager() {
             isEditing={!!editingEventId}
             yearHasSibling={yearHasSibling}
             onInput={handleEventInput}
-            onCoverChange={setCoverImage}
             onSubmit={saveEvent}
             onClose={closeEventForm}
           />
@@ -555,7 +547,6 @@ export default function PastEventsManager() {
           isEditing={!!editingEventId}
           yearHasSibling={yearHasSibling}
           onInput={handleEventInput}
-          onCoverChange={setCoverImage}
           onSubmit={saveEvent}
           onClose={closeEventForm}
         />
@@ -564,7 +555,7 @@ export default function PastEventsManager() {
   );
 }
 
-function EventFormModal({ form, error, isSaving, isEditing, yearHasSibling, onInput, onCoverChange, onSubmit, onClose }) {
+function EventFormModal({ form, error, isSaving, isEditing, yearHasSibling, onInput, onSubmit, onClose }) {
   const firstFieldRef = useRef(null);
 
   // Mount only. This deliberately does NOT depend on onClose: when it did, every
@@ -677,18 +668,6 @@ function EventFormModal({ form, error, isSaving, isEditing, yearHasSibling, onIn
                   placeholder="A short paragraph about this edition, shown under the stats."
                 />
               </div>
-            </section>
-
-            <section className="admin-form-section">
-              <h4 className="admin-form-section-title">Cover Image</h4>
-              <ImageUploadField
-                id="pe-cover-upload"
-                value={form.cover_image}
-                onChange={onCoverChange}
-                folder={`${form.year || 'covers'}/covers`}
-                label="Page hero for this edition"
-                hint="Used as the banner when this year is selected. Landscape images work best."
-              />
             </section>
 
             <section className="admin-form-section">
