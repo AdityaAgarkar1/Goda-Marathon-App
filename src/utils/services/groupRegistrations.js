@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { notDeployed } from './registrations';
 
 /**
  * Bulk (group) registrations.
@@ -234,4 +235,20 @@ export const updateGroupPaymentStatus = async (groupId, status) => {
     throw error;
   }
   return data;
+};
+
+/**
+ * Permanently delete a group and every participant in it.
+ *
+ * Through admin_delete_groups(), because registrations.group_id is ON DELETE
+ * SET NULL: a plain DELETE on the group would leave its members behind as
+ * solo entries. The group's coupon use is handed back; payment records stay.
+ */
+export const deleteGroup = async (groupId) => {
+  const { data, error } = await supabase.rpc('admin_delete_groups', { p_ids: [groupId] });
+  if (error) {
+    console.error('Error deleting group', error);
+    throw notDeployed(error, 'admin_delete_groups') || error;
+  }
+  return data ?? 0;
 };

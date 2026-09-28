@@ -190,8 +190,8 @@ export const updateRegistration = async (id, updates) => {
   return data;
 };
 
-/** Soft-delete: sets payment_status to CANCELLED */
-export const deleteRegistration = async (id) => {
+/** Soft-delete: sets payment_status to CANCELLED. The row stays. */
+export const cancelRegistration = async (id) => {
   const { data, error } = await supabase
     .from(TABLE_NAME)
     .update({ payment_status: 'CANCELLED' })
@@ -218,7 +218,7 @@ export const bulkUpdatePaymentStatus = async (ids, status) => {
   return data;
 };
 
-export const bulkDeleteRegistrations = async (ids) => {
+export const bulkCancelRegistrations = async (ids) => {
   const { data, error } = await supabase
     .from(TABLE_NAME)
     .update({ payment_status: 'CANCELLED' })
@@ -229,6 +229,39 @@ export const bulkDeleteRegistrations = async (ids) => {
     throw error;
   }
   return data;
+};
+
+/**
+ * Permanently delete entries. Admin session required.
+ *
+ * Goes through admin_delete_registrations() rather than a plain DELETE so the
+ * bookkeeping moves with the row: a solo entry's coupon use is handed back,
+ * and a group member's share comes off the group's count and total (an
+ * emptied group is removed). Payment records are kept either way.
+ * Returns how many rows were deleted.
+ */
+export const deleteRegistrations = async (ids) => {
+  const { data, error } = await supabase.rpc('admin_delete_registrations', { p_ids: ids });
+  if (error) {
+    console.error('Error deleting registrations', error);
+    throw notDeployed(error, 'admin_delete_registrations') || error;
+  }
+  return data ?? 0;
+};
+
+/**
+ * PGRST202 means the function is not in the database -- the frontend shipped
+ * without migration 0013. Say so, instead of a raw PostgREST message.
+ */
+export const notDeployed = (error, fn) => {
+  if (error?.code !== 'PGRST202' && !/Could not find the function/i.test(error?.message || '')) {
+    return null;
+  }
+  console.error(
+    `${fn}() is missing from the database. Apply ` +
+    'supabase/migrations/0013_admin_delete_registrations.sql before deploying this build.'
+  );
+  return new Error('Deleting is not available yet: the database migration 0013 has not been applied.');
 };
 
 /**

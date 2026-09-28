@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Download, Users, IndianRupee, Activity, Search, Filter, RefreshCw, Edit3, CheckSquare, Square, XCircle, AlertTriangle } from 'lucide-react';
-import { getRegistrations, getStats, exportToCSV, updateRegistration, deleteRegistration, bulkUpdatePaymentStatus, bulkDeleteRegistrations } from '../../utils/services/registrations';
+import { Download, Users, IndianRupee, Activity, Search, Filter, RefreshCw, Edit3, CheckSquare, Square, XCircle, AlertTriangle, Trash2 } from 'lucide-react';
+import { getRegistrations, getStats, exportToCSV, updateRegistration, cancelRegistration, bulkUpdatePaymentStatus, bulkCancelRegistrations, deleteRegistrations } from '../../utils/services/registrations';
+import { describeSaveError } from '../../utils/services/errors';
 import { getEventCategories } from '../../utils/services/categories';
 import { getPaymentIssues } from '../../utils/services/payments';
 import EditRegistrationModal from './EditRegistrationModal';
@@ -21,6 +22,7 @@ export default function RegistrationManager({ eventSlug, eventUuid }) {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [paymentIssues, setPaymentIssues] = useState([]);
+  const [actionError, setActionError] = useState('');
 
   // Debounce search input (300ms)
   useEffect(() => {
@@ -101,14 +103,63 @@ export default function RegistrationManager({ eventSlug, eventUuid }) {
     } catch (err) { console.error('Bulk update failed:', err); }
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkCancel = async () => {
     if (!window.confirm(`Cancel ${selectedIds.size} registrations? (soft-delete)`)) return;
     try {
-      await bulkDeleteRegistrations([...selectedIds]);
+      await bulkCancelRegistrations([...selectedIds]);
       setSelectedIds(new Set());
       await fetchData();
-    } catch (err) { console.error('Bulk delete failed:', err); }
+    } catch (err) { console.error('Bulk cancel failed:', err); }
   };
+
+  /** What a delete confirmation has to spell out beyond "are you sure". Only
+   *  rows on this page are in hand, so selections from other pages are not
+   *  checked -- the database still keeps their groups consistent. */
+  const deleteWarnings = (rows) => {
+    const notes = [];
+    const paid = rows.filter(r => r.payment_status === 'PAID').length;
+    const grouped = rows.filter(r => r.group_id).length;
+    if (paid > 0) {
+      notes.push(`${paid} of these ${paid === 1 ? 'is' : 'are'} PAID. Deleting does not refund anyone; do that from the Razorpay dashboard first if needed.`);
+    }
+    if (grouped > 0) {
+      notes.push(`${grouped} ${grouped === 1 ? 'belongs' : 'belong'} to a group entry; the group's count and total will be reduced.`);
+    }
+    return notes.length ? `\n\n${notes.join('\n')}` : '';
+  };
+
+  /** Permanent, unlike cancel: the row is gone and cannot be restored. */
+  const removeRegistrations = async (ids, question) => {
+    const visible = registrations.filter(r => ids.includes(r.id));
+    if (!window.confirm(`${question}\n\nThis permanently removes the record and cannot be undone.${deleteWarnings(visible)}`)) return;
+    setActionError('');
+    try {
+      await deleteRegistrations(ids);
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        ids.forEach(id => next.delete(id));
+        return next;
+      });
+      // Emptying the last page would leave "Page 3 of 2" and no rows.
+      if (visible.length >= registrations.length && currentPage > 0) {
+        setCurrentPage(p => p - 1);
+      } else {
+        await fetchData();
+      }
+    } catch (err) {
+      setActionError(err.code ? describeSaveError(err, 'registrations') : err.message);
+    }
+  };
+
+  const handleBulkDelete = () => removeRegistrations(
+    [...selectedIds],
+    `Delete ${selectedIds.size} registration${selectedIds.size === 1 ? '' : 's'}?`
+  );
+
+  const handleDelete = (reg) => removeRegistrations(
+    [reg.id],
+    `Delete the registration for ${reg.first_name} ${reg.last_name}?`
+  );
 
   const handleTogglePayment = async (reg) => {
     const next = reg.payment_status === 'PAID' ? 'PENDING' : 'PAID';
@@ -118,12 +169,12 @@ export default function RegistrationManager({ eventSlug, eventUuid }) {
     } catch (err) { console.error('Toggle failed:', err); }
   };
 
-  const handleDelete = async (reg) => {
+  const handleCancel = async (reg) => {
     if (!window.confirm(`Cancel registration for ${reg.first_name} ${reg.last_name}?`)) return;
     try {
-      await deleteRegistration(reg.id);
+      await cancelRegistration(reg.id);
       await fetchData();
-    } catch (err) { console.error('Delete failed:', err); }
+    } catch (err) { console.error('Cancel failed:', err); }
   };
 
   const handleEditSave = async (id, updates) => {
@@ -212,12 +263,17 @@ export default function RegistrationManager({ eventSlug, eventUuid }) {
         )}
       </div>
 
+      {actionError && (
+        <div className="admin-save-msg error" role="alert">{actionError}</div>
+      )}
+
       {/* Bulk Action Bar */}
       {selectedIds.size > 0 && (
         <div className="admin-bulk-bar glass">
           <span>{selectedIds.size} selected</span>
           <button className="btn btn-primary" onClick={handleBulkPaid} style={{ padding: '6px 14px', fontSize: '0.8rem' }}>Mark Paid</button>
-          <button className="btn btn-outline admin-danger-btn" onClick={handleBulkDelete} style={{ padding: '6px 14px', fontSize: '0.8rem' }}>Cancel Selected</button>
+          <button className="btn btn-outline admin-danger-btn" onClick={handleBulkCancel} style={{ padding: '6px 14px', fontSize: '0.8rem' }}>Cancel Selected</button>
+          <button className="btn btn-outline admin-danger-btn" onClick={handleBulkDelete} style={{ padding: '6px 14px', fontSize: '0.8rem' }}>Delete Selected</button>
           <button className="btn btn-outline" onClick={() => setSelectedIds(new Set())} style={{ padding: '6px 14px', fontSize: '0.8rem' }}>Clear</button>
         </div>
       )}
@@ -291,7 +347,8 @@ export default function RegistrationManager({ eventSlug, eventUuid }) {
                       <td style={{ textAlign: 'right' }}>
                         <div className="admin-row-actions">
                           <button className="admin-cat-action-btn" onClick={() => setEditingReg(row)} title="Edit"><Edit3 size={14} /></button>
-                          <button className="admin-cat-action-btn admin-cat-delete-btn" onClick={() => handleDelete(row)} title="Cancel"><XCircle size={14} /></button>
+                          <button className="admin-cat-action-btn admin-cat-delete-btn" onClick={() => handleCancel(row)} title="Cancel"><XCircle size={14} /></button>
+                          <button className="admin-cat-action-btn admin-cat-delete-btn" onClick={() => handleDelete(row)} title="Delete permanently"><Trash2 size={14} /></button>
                         </div>
                       </td>
                     </tr>
@@ -330,7 +387,8 @@ export default function RegistrationManager({ eventSlug, eventUuid }) {
                 </div>
                 <div className="admin-card-actions">
                   <button className="admin-cat-action-btn" onClick={() => setEditingReg(row)}><Edit3 size={14} /> Edit</button>
-                  <button className="admin-cat-action-btn admin-cat-delete-btn" onClick={() => handleDelete(row)}><XCircle size={14} /> Cancel</button>
+                  <button className="admin-cat-action-btn admin-cat-delete-btn" onClick={() => handleCancel(row)}><XCircle size={14} /> Cancel</button>
+                  <button className="admin-cat-action-btn admin-cat-delete-btn" onClick={() => handleDelete(row)}><Trash2 size={14} /> Delete</button>
                 </div>
               </div>
             ))

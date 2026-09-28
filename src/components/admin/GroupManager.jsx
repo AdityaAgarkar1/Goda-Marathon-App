@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Users, ChevronDown, CheckCircle, Clock, XCircle, Tag, Mail, Phone, Loader,
+  Users, ChevronDown, CheckCircle, Clock, XCircle, Tag, Mail, Phone, Loader, Trash2,
 } from 'lucide-react';
 
 import {
-  getRegistrationGroups, getGroupMembers, updateGroupPaymentStatus,
+  getRegistrationGroups, getGroupMembers, updateGroupPaymentStatus, deleteGroup,
 } from '../../utils/services/groupRegistrations';
+import { deleteRegistrations } from '../../utils/services/registrations';
 import { describeSaveError } from '../../utils/services/errors';
 
 const formatPrice = (p) =>
@@ -66,6 +67,68 @@ export default function GroupManager({ eventSlug }) {
     }
   };
 
+  /** Drop a group's cached member list so the next expand refetches it. */
+  const forgetMembers = (groupId) => setMembers(prev => {
+    const next = { ...prev };
+    delete next[groupId];
+    return next;
+  });
+
+  const paidWarning = (status) => status === 'PAID'
+    ? '\n\nThis entry is PAID. Deleting does not refund anyone; do that from the Razorpay dashboard first if needed.'
+    : '';
+
+  const removeGroup = async (group) => {
+    if (!window.confirm(
+      `Permanently delete group "${group.group_code}" and all ` +
+      `${group.participant_count} participant${group.participant_count === 1 ? '' : 's'} in it? ` +
+      `This cannot be undone.${paidWarning(group.payment_status)}`
+    )) return;
+
+    setBusyId(group.id);
+    setError('');
+    try {
+      await deleteGroup(group.id);
+      forgetMembers(group.id);
+      setExpandedId(null);
+      await loadGroups();
+    } catch (err) {
+      setError(err.code ? describeSaveError(err, 'group') : err.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  /** One runner out of a group: the group's count and total drop by their
+   *  share. Removing the last one removes the group. */
+  const removeMember = async (group, member) => {
+    const isLast = (members[group.id] || []).length <= 1;
+    if (!window.confirm(
+      `Permanently delete ${member.first_name} ${member.last_name} from group "${group.group_code}"? ` +
+      `The group total will be reduced by their fee. This cannot be undone.` +
+      (isLast ? ' They are the last participant, so the group will be deleted too.' : '') +
+      paidWarning(member.payment_status)
+    )) return;
+
+    setBusyId(group.id);
+    setError('');
+    try {
+      await deleteRegistrations([member.id]);
+      if (isLast) {
+        forgetMembers(group.id);
+        setExpandedId(null);
+      } else {
+        const rows = await getGroupMembers(group.id);
+        setMembers(prev => ({ ...prev, [group.id]: rows }));
+      }
+      await loadGroups();
+    } catch (err) {
+      setError(err.code ? describeSaveError(err, 'participant') : err.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const setStatus = async (group, status) => {
     const verb = status === 'PAID' ? 'mark as paid' : status === 'CANCELLED' ? 'cancel' : 'set to pending';
     if (!window.confirm(
@@ -78,11 +141,7 @@ export default function GroupManager({ eventSlug }) {
     try {
       await updateGroupPaymentStatus(group.id, status);
       // The member list in hand is now stale; drop it so a re-expand refetches.
-      setMembers(prev => {
-        const next = { ...prev };
-        delete next[group.id];
-        return next;
-      });
+      forgetMembers(group.id);
       await loadGroups();
     } catch (err) {
       setError(describeSaveError(err, 'group'));
@@ -206,6 +265,7 @@ export default function GroupManager({ eventSlug }) {
                               <th scope="col" className="admin-num">Discount</th>
                               <th scope="col" className="admin-num">Payable</th>
                               <th scope="col">Status</th>
+                              <th scope="col"><span className="sr-only">Actions</span></th>
                             </tr>
                           </thead>
                           <tbody>
@@ -227,6 +287,18 @@ export default function GroupManager({ eventSlug }) {
                                 </td>
                                 <td className="admin-num">{formatPrice(r.price)}</td>
                                 <td>{r.payment_status}</td>
+                                <td>
+                                  <button
+                                    type="button"
+                                    className="admin-cat-action-btn admin-cat-delete-btn"
+                                    disabled={busyId === g.id}
+                                    onClick={() => removeMember(g, r)}
+                                    title="Delete participant permanently"
+                                    aria-label={`Delete ${r.first_name} ${r.last_name}`}
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -238,7 +310,7 @@ export default function GroupManager({ eventSlug }) {
                                 {Number(g.discount) > 0 ? `−${formatPrice(g.discount)}` : '—'}
                               </td>
                               <td className="admin-num"><strong>{formatPrice(g.total)}</strong></td>
-                              <td />
+                              <td colSpan={2} />
                             </tr>
                           </tfoot>
                         </table>
@@ -266,6 +338,13 @@ export default function GroupManager({ eventSlug }) {
                         onClick={() => setStatus(g, 'CANCELLED')}
                       >
                         <XCircle size={16} /> Cancel group
+                      </button>
+                      <button
+                        className="btn btn-outline admin-action-btn admin-danger-btn"
+                        disabled={busyId === g.id}
+                        onClick={() => removeGroup(g)}
+                      >
+                        <Trash2 size={16} /> Delete group
                       </button>
                     </div>
                   </div>
