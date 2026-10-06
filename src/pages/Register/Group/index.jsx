@@ -827,6 +827,7 @@ export default function GroupRegister() {
               contactEmail={eventConfig?.contact_email}
               contactPhone={eventConfig?.contact_phone}
               formatCurrency={formatCurrency}
+              emailsEnabled={eventConfig?.confirmation_emails_enabled === true}
             />
           )}
         </div>

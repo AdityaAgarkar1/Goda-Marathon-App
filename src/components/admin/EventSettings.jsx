@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, RefreshCw, CheckCircle } from 'lucide-react';
+import { Save, RefreshCw, CheckCircle, Eye } from 'lucide-react';
 import { getCurrentEvent, updateEvent } from '../../utils/services/events';
 import { getEventCategories } from '../../utils/services/categories';
 import { uploadHeroVariants, deleteStoredImageAt } from '../../utils/services/storage';
@@ -8,6 +8,7 @@ import { formatHeroDate, buildCountdownTarget } from '../../utils/dates';
 import { DEFAULT_HERO_HEADLINE } from '../HeroHeadline';
 import HeroImageField from './HeroImageField';
 import HeroPreview from './HeroPreview';
+import EmailPreviewModal from './EmailPreviewModal';
 
 export default function EventSettings() {
   const [eventData, setEventData] = useState(null);
@@ -18,6 +19,7 @@ export default function EventSettings() {
   const [savedHero, setSavedHero] = useState(null);
   const [pendingHero, setPendingHero] = useState(null);
   const [categoryCount, setCategoryCount] = useState(0);
+  const [showEmailPreview, setShowEmailPreview] = useState(false);
 
   useEffect(() => { loadEvent(); }, []);
 
@@ -58,6 +60,8 @@ export default function EventSettings() {
   // neither shown nor saved, so this panel keeps working on a database that
   // has not been migrated yet.
   const hasPaymentSettings = !!eventData && 'online_payment_enabled' in eventData;
+  // Likewise the email settings, which arrive with migration 0014.
+  const hasEmailSettings = !!eventData && 'confirmation_emails_enabled' in eventData;
 
   const handleSave = async () => {
     if (!eventData) return;
@@ -78,6 +82,10 @@ export default function EventSettings() {
           // The database enforces 10-180; clamping here turns a typo into a
           // sensible value instead of a failed save.
           payment_hold_minutes: Number.isFinite(hold) ? Math.min(Math.max(hold, 10), 180) : 30,
+        } : {}),
+        ...(hasEmailSettings ? {
+          confirmation_emails_enabled: !!eventData.confirmation_emails_enabled,
+          confirmation_email_note: eventData.confirmation_email_note?.trim() || null,
         } : {}),
         name: eventData.name,
         date: eventData.date,
@@ -263,6 +271,48 @@ export default function EventSettings() {
           </p>
         )}
 
+        {/* Registration emails */}
+        <h4 className="admin-form-section-title" style={{ marginTop: '1.5rem' }}>Registration Emails</h4>
+        {hasEmailSettings ? (
+          <>
+            <div className="admin-event-toggle">
+              <label className="admin-toggle-label">
+                <input type="checkbox" name="confirmation_emails_enabled" checked={eventData.confirmation_emails_enabled || false} onChange={handleInput} className="admin-toggle-checkbox" />
+                <span className="admin-toggle-switch"></span>
+                <span>Automatic emails {eventData.confirmation_emails_enabled ? 'On' : 'Off'}</span>
+              </label>
+            </div>
+            <span className="admin-field-hint" style={{ display: 'block', marginTop: '0.5rem' }}>
+              On: every runner is emailed their bib and entry details when their entry is confirmed (paid
+              online, free with a coupon, or marked paid in Registrations), and group coordinators get a roster. With
+              online payment off, whoever registered is also emailed straight away with the amount due.
+              Track delivery under Email &rarr; Deliveries. Replies go to the contact email below.
+            </span>
+            <div className="admin-media-form-group" style={{ marginTop: '0.75rem' }}>
+              <label htmlFor="evt-email-note">Race-day information</label>
+              <textarea
+                id="evt-email-note"
+                name="confirmation_email_note"
+                value={eventData.confirmation_email_note || ''}
+                onChange={handleInput}
+                rows={4}
+                style={{ resize: 'vertical' }}
+                placeholder={'Kit collection: Decathlon Nashik, 11–12 Dec, 10 am – 7 pm\nReporting time: 5:45 am at the start arch\nBring: photo ID and this email'}
+              />
+              <span className="admin-field-hint">
+                Printed in every confirmation email sent after you save. Leave empty until the details are final.
+              </span>
+            </div>
+            <button type="button" className="btn btn-outline admin-action-btn" onClick={() => setShowEmailPreview(true)} style={{ gap: '6px', marginTop: '0.75rem' }}>
+              <Eye size={16} /> Preview email
+            </button>
+          </>
+        ) : (
+          <p className="admin-field-hint">
+            Apply <code>supabase/migrations/0014_registration_emails.sql</code> to enable registration emails.
+          </p>
+        )}
+
         {/* Contact Details */}
         <h4 className="admin-form-section-title" style={{ marginTop: '1.5rem' }}>Contact Details</h4>
         <div className="admin-media-form-grid">
@@ -276,6 +326,10 @@ export default function EventSettings() {
           </div>
         </div>
       </div>
+
+      {showEmailPreview && (
+        <EmailPreviewModal event={eventData} onClose={() => setShowEmailPreview(false)} />
+      )}
     </div>
   );
 }

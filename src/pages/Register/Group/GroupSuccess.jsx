@@ -14,7 +14,7 @@ import { describeCouponReason } from '../../../utils/services/coupons';
  * Math.random() that support could never look up.
  */
 export default function GroupSuccess({
-  result, eventName, contactEmail, contactPhone, formatCurrency,
+  result, eventName, contactEmail, contactPhone, formatCurrency, emailsEnabled,
 }) {
   const participants = result?.participants || [];
   const isPaid = result?.payment_status === 'PAID';
@@ -172,6 +172,14 @@ export default function GroupSuccess({
       <div className="reg-success-next">
         <h3>What happens next</h3>
         <ol>
+          {emailsEnabled && result?.captain_email && (
+            <li>
+              {isPaid
+                ? <>A confirmation with the roster is on its way to <strong>{result.captain_email}</strong>, and each runner is emailed their own bib number.</>
+                : <>A copy of this registration is on its way to <strong>{result.captain_email}</strong>.</>}
+              {' '}If it has not arrived in a few minutes, check your spam folder.
+            </li>
+          )}
           {isPaid ? (
             <li>
               Every place in the group is confirmed. Share the roster (with bib

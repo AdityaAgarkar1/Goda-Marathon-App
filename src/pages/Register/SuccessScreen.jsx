@@ -10,9 +10,11 @@ import { CheckCircle, Clock } from 'lucide-react';
  * `registration` is the row Supabase returned, so the bib and category are the
  * real stored values. The previous version invented a reference with
  * Math.random() — a number support could never look up — and told the runner a
- * confirmation email had been sent when nothing sends one.
+ * confirmation email had been sent when nothing sent one. Migration 0014 now
+ * emails them, so the screen says so — only when `emailsEnabled`, the event's
+ * own switch, says an email really is on its way.
  */
-export default function SuccessScreen({ registration, eventName, contactEmail, contactPhone }) {
+export default function SuccessScreen({ registration, eventName, contactEmail, contactPhone, emailsEnabled }) {
   const bib = registration?.bib;
   const isPaid = registration?.payment_status === 'PAID';
 
@@ -65,6 +67,13 @@ export default function SuccessScreen({ registration, eventName, contactEmail, c
       <div className="reg-success-next">
         <h3>What happens next</h3>
         <ol>
+          {emailsEnabled && registration?.email && (
+            <li>
+              {isPaid ? 'A confirmation' : 'A copy of this registration'} is on its way
+              to <strong>{registration.email}</strong>. If it has not arrived in a few
+              minutes, check your spam folder.
+            </li>
+          )}
           {isPaid ? (
             <li>
               Your place is confirmed. Quote your bib number

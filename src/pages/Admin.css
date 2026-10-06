@@ -878,6 +878,9 @@
   animation: fadeIn 0.3s ease;
 }
 
+/* A long message must wrap beside its icon, not squeeze the icon to a dot. */
+.admin-save-msg > svg { flex-shrink: 0; }
+
 .admin-save-msg.success {
   background: rgba(57, 255, 20, 0.08);
   border: 1px solid rgba(57, 255, 20, 0.2);
@@ -1338,6 +1341,107 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+/* ── Registration email deliveries ─────────────────────────────────────── */
+.admin-badge-neutral {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-muted);
+}
+
+.admin-chip.admin-chip-alert:not(.is-on) {
+  border-color: rgba(255, 60, 60, 0.45);
+  color: #ff6b6b;
+}
+
+.admin-delivery-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.admin-delivery-filters {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+  .admin-delivery-filters { grid-template-columns: 2fr 1fr; }
+}
+
+/* The registrations toolbar caps these widths for its one-row layout; here
+   they fill their grid columns. */
+.admin-delivery-filters .admin-search-wrap,
+.admin-delivery-filters .admin-select-wrap { max-width: none; }
+
+.admin-delivery-address {
+  font-weight: 400;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+/* Several facts per row; let them wrap on a phone instead of overflowing. */
+.admin-delivery-meta { flex-wrap: wrap; gap: 0.25rem 1rem; }
+
+.admin-delivery-error {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: #ff6b6b;
+  overflow-wrap: anywhere;
+}
+
+.admin-delivery-error.is-info { color: var(--color-text-muted); }
+
+.admin-delivery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.admin-delivery-timeline {
+  margin: 10px 0 0;
+  padding: 10px 0 0 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.78rem;
+  line-height: 1.7;
+}
+
+.admin-delivery-timeline span {
+  display: inline-block;
+  min-width: 7.5em;
+  color: var(--color-text-muted);
+}
+
+.admin-delivery-timeline em { color: var(--color-text-muted); font-style: normal; }
+
+.admin-email-preview-modal { max-width: 720px; width: 100%; }
+
+.admin-email-preview-subject {
+  margin: 0.5rem 0 0.75rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.admin-email-preview-subject span {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+  margin-right: 6px;
+}
+
+/* The email brings its own light background; this is just the window onto it. */
+.admin-email-preview-frame {
+  display: block;
+  width: 100%;
+  height: min(65vh, 720px);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #EDEFED;
 }
 
 /* ========================================

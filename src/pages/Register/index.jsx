@@ -734,6 +734,7 @@ export default function Register() {
               eventName={eventConfig?.name || CURRENT_EVENT.name}
               contactEmail={eventConfig?.contact_email}
               contactPhone={eventConfig?.contact_phone}
+              emailsEnabled={eventConfig?.confirmation_emails_enabled === true}
             />
           )}
         </div>

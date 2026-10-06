@@ -163,3 +163,164 @@ export const getEmailLog = async () => {
 };
 
 export { EmailStatus };
+
+/* ── Registration emails ──────────────────────────────────────────────────
+ * The automatic confirmation emails from migration 0014: one row per person
+ * in email_messages, queued by database triggers, sent by the send-emails
+ * edge function and moved on by Resend's delivery webhooks. All of it is
+ * admin-read-only; the actions below go through admin-only functions.
+ */
+
+/** Delivery states, in the order a healthy email moves through them. */
+export const DeliveryStatus = {
+  QUEUED: 'QUEUED',
+  SENDING: 'SENDING',
+  SENT: 'SENT',
+  DELAYED: 'DELAYED',
+  DELIVERED: 'DELIVERED',
+  BOUNCED: 'BOUNCED',
+  COMPLAINED: 'COMPLAINED',
+  SUPPRESSED: 'SUPPRESSED',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED',
+};
+
+/** Did not reach the inbox, or was reported: needs an organiser to look at it. */
+export const PROBLEM_STATUSES = ['BOUNCED', 'COMPLAINED', 'SUPPRESSED', 'FAILED'];
+
+/** PostgREST's "no such table/function": the frontend shipped before migration 0014. */
+const missing0014 = (error) =>
+  ['PGRST202', 'PGRST205', '42P01'].includes(error?.code) ||
+  /Could not find the (table|function)|does not exist/i.test(error?.message || '');
+
+const MIGRATION_HINT = 'Registration emails need migration supabase/migrations/0014_registration_emails.sql applied first.';
+
+const DELIVERY_COLUMNS =
+  'id, kind, status, to_email, to_name, subject, attempts, last_error, queued_by, ' +
+  'created_at, sent_at, delivered_at, opened_at, failed_at, next_attempt_at, ' +
+  'registration_id, group_id, ' +
+  'registrations(bib, category, payment_status), registration_groups(group_code)';
+
+/** The newest 1,000 registration emails for an event. */
+export const getEmailDeliveries = async (eventId) => {
+  const { data, error } = await supabase
+    .from('email_messages')
+    .select(DELIVERY_COLUMNS)
+    .eq('event_id', eventId)
+    .order('created_at', { ascending: false })
+    .limit(1000);
+  if (error) {
+    console.error('Error fetching email deliveries', error);
+    throw missing0014(error) ? new Error(MIGRATION_HINT) : error;
+  }
+  return data || [];
+};
+
+/** Everything Resend reported about one email, oldest first. */
+export const getEmailEvents = async (messageId) => {
+  const { data, error } = await supabase
+    .from('email_events')
+    .select('id, type, detail, occurred_at, received_at')
+    .eq('message_id', messageId)
+    .order('received_at', { ascending: true });
+  if (error) {
+    console.error('Error fetching email events', error);
+    throw error;
+  }
+  return data || [];
+};
+
+/**
+ * Whether the database knows where the dispatcher is. It learns this the first
+ * time send-emails runs; until then nothing is sent automatically.
+ */
+export const getEmailDispatchStatus = async () => {
+  const { data, error } = await supabase
+    .from('email_settings')
+    .select('dispatch_url, updated_at')
+    .eq('id', 1)
+    .maybeSingle();
+  if (error) {
+    console.error('Error fetching email settings', error);
+    return { connected: false };
+  }
+  return { connected: !!data?.dispatch_url, updatedAt: data?.updated_at };
+};
+
+/** The JSON error body a non-2xx edge function response carried, if any. */
+const functionErrorMessage = async (error) => {
+  try {
+    const body = await error?.context?.json?.();
+    if (body?.error) return body.error;
+  } catch { /* not JSON */ }
+  return error?.message || 'The email function failed.';
+};
+
+/**
+ * Run the dispatcher now and wait for it. Normally the database triggers it;
+ * this is for the first run after deploying (which also connects it) and for
+ * anyone who does not want to wait for the next retry.
+ */
+export const processEmailQueue = async () => {
+  const { data, error } = await supabase.functions.invoke('send-emails', { body: { wait: true } });
+  if (error) {
+    const message = await functionErrorMessage(error);
+    if (/404|not found/i.test(message) || error?.context?.status === 404) {
+      throw new Error('The send-emails function is not deployed yet. Run `npm run supabase -- functions deploy send-emails --no-verify-jwt`.');
+    }
+    throw new Error(message);
+  }
+  return data;
+};
+
+const RESEND_ERRORS = {
+  ALREADY_QUEUED: 'That email is already waiting to be sent.',
+  ENTRY_NOT_FOUND: 'The entry this email was about no longer exists.',
+  MESSAGE_NOT_FOUND: 'That email is no longer in the log.',
+  NOT_AUTHORIZED: 'Your account is not permitted to send email.',
+};
+
+const describeRpcError = (error) => {
+  if (missing0014(error)) return new Error(MIGRATION_HINT);
+  const code = Object.keys(RESEND_ERRORS).find(k => error?.message?.includes(k));
+  return new Error(code ? RESEND_ERRORS[code] : (error?.message || 'Something went wrong.'));
+};
+
+/**
+ * Send an email again, to the address on the entry now. Fix a typo in the
+ * Registrations tab first, then press this, and the bounce is dealt with.
+ */
+export const resendEmail = async (messageId) => {
+  const { data, error } = await supabase.rpc('admin_resend_email', { p_message_id: messageId });
+  if (error) {
+    console.error('Error resending email', error);
+    throw describeRpcError(error);
+  }
+  return data;
+};
+
+/** How many paid entries have never been sent a confirmation. Sends nothing. */
+export const countMissingConfirmations = async (eventId) => {
+  const { data, error } = await supabase.rpc('admin_queue_missing_confirmations', {
+    p_event_id: eventId,
+    p_dry_run: true,
+  });
+  if (error) {
+    console.error('Error counting missing confirmations', error);
+    throw describeRpcError(error);
+  }
+  return data ?? 0;
+};
+
+/** Queue a confirmation for every paid entry that has never had one. Returns how many. */
+export const queueMissingConfirmations = async (eventId) => {
+  const { data, error } = await supabase.rpc('admin_queue_missing_confirmations', {
+    p_event_id: eventId,
+    p_dry_run: false,
+  });
+  if (error) {
+    console.error('Error queueing missing confirmations', error);
+    throw describeRpcError(error);
+  }
+  return data ?? 0;
+};

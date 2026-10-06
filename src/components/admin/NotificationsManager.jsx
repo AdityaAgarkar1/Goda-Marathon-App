@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Send, Mail, Clock, Users, Filter, FileText, Eye, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { Send, Mail, Clock, Users, Filter, FileText, Eye, CheckCircle, AlertCircle, RefreshCw, MailCheck } from 'lucide-react';
 import { getRegistrations } from '../../utils/services/registrations';
 import { getEventCategories } from '../../utils/services/categories';
 import { sendBulkEmail, getEmailLog, retryEmail, EmailStatus } from '../../utils/services/email';
+import EmailDeliveryLog from './EmailDeliveryLog';
 
 const TEMPLATES = [
   { id: 'confirm', name: 'Registration Confirmation', subject: 'Your Registration is Confirmed! 🏃', body: 'Dear Runner,\n\nThank you for registering for the GODA Epic Trail Run 2026!\n\nYour registration has been received and confirmed. Please keep this email for your records.\n\nSee you at the starting line!\n\nTeam GODA' },
@@ -134,8 +135,13 @@ export default function NotificationsManager({ eventUuid, eventSlug }) {
           <button className={`btn ${activeView === 'log' ? 'btn-primary' : 'btn-outline'} admin-action-btn`} onClick={() => setActiveView('log')} style={{ gap: '6px' }}>
             <Clock size={18} /> <span className="admin-action-label">Sent Log</span>
           </button>
+          <button className={`btn ${activeView === 'deliveries' ? 'btn-primary' : 'btn-outline'} admin-action-btn`} onClick={() => setActiveView('deliveries')} style={{ gap: '6px' }}>
+            <MailCheck size={18} /> <span className="admin-action-label">Deliveries</span>
+          </button>
         </div>
       </div>
+
+      {activeView === 'deliveries' && <EmailDeliveryLog eventId={eventSlug} />}
 
       {activeView === 'compose' && (
         <div className="admin-email-composer glass" style={{ padding: '1.5rem', borderRadius: '14px' }}>

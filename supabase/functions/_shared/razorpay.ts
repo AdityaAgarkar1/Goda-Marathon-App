@@ -13,37 +13,11 @@
 // served from here rather than baked into the frontend build, so switching
 // from test keys to live keys is a `secrets set`, not a redeploy of the site.
 
-import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { env, safeEqual } from './edge.ts';
 
-export const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
-
-export const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
-  });
-
-export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/** Thrown for a missing secret, so each function can answer 503 consistently. */
-export class ConfigError extends Error {}
-
-export function env(name: string): string {
-  const value = Deno.env.get(name);
-  if (!value) throw new ConfigError(`${name} is not set`);
-  return value;
-}
-
-/** Service-role client. Bypasses RLS, so it never leaves the edge function. */
-export function serviceClient(): SupabaseClient {
-  return createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
+// Re-exported so the razorpay-* functions keep importing everything from here.
+export { CORS, ConfigError, UUID_RE, env, json, serviceClient } from './edge.ts';
 
 /* ── Razorpay REST ──────────────────────────────────────────────────────── */
 
@@ -108,14 +82,6 @@ async function hmacSha256Hex(secret: string, message: string): Promise<string> {
   return Array.from(new Uint8Array(signature))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
-}
-
-/** Constant-time, so the comparison cannot be timed to guess a signature byte by byte. */
-function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
 }
 
 /** Checkout's success signature: HMAC-SHA256(order_id + "|" + payment_id, key secret). */
