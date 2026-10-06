@@ -959,18 +959,12 @@ a.story-card:hover {
   object-fit: cover;
 }
 
-.story-cover--empty,
-.story-cover--next {
+.story-cover--empty {
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--color-bg-surface-light);
   color: var(--color-text-muted);
-}
-
-.story-cover--next {
-  background: rgba(69, 229, 44, 0.12);
-  color: var(--color-primary);
 }
 
 .story-card-body {

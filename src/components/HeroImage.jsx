@@ -36,8 +36,11 @@ function buildSrcSet(widths, urlForWidth) {
  * `sizes` is the width the photo is *drawn* at, which is not the width of its
  * box: a landscape photo covering a tall, phone-width box is drawn well wider
  * than the screen. Understating it makes the browser pick a file too small.
+ *
+ * `lazy` is for a copy further down the page, which should neither compete
+ * with the real hero for bandwidth nor load before it is scrolled to.
  */
-export function HeroImage({ src, className, sizes = '100vw' }) {
+export function HeroImage({ src, className, sizes = '100vw', lazy = false }) {
   const url = src || DEFAULT_HERO_IMAGE;
   const local = LOCAL_HEROES[url];
   const uploaded = !local && parseUploadedHero(url);
@@ -66,7 +69,8 @@ export function HeroImage({ src, className, sizes = '100vw' }) {
       alt=""
       className={className}
       style={local ? { objectPosition: local.focus } : undefined}
-      fetchPriority="high"
+      fetchPriority={lazy ? undefined : 'high'}
+      loading={lazy ? 'lazy' : undefined}
       decoding="async"
     />
   );

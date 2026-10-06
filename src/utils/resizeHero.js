@@ -13,10 +13,11 @@ export const MIN_HERO_WIDTH = 1200;
 export const SHARP_HERO_WIDTH = 1920;
 const MAX_WIDTH = VARIANT_WIDTHS[VARIANT_WIDTHS.length - 1];
 
-const WEBP = { type: 'image/webp', ext: 'webp', quality: 0.82 };
-const JPEG = { type: 'image/jpeg', ext: 'jpg', quality: 0.85 };
+// Shared with resizeCover.
+export const WEBP = { type: 'image/webp', ext: 'webp', quality: 0.82 };
+export const JPEG = { type: 'image/jpeg', ext: 'jpg', quality: 0.85 };
 
-function loadImage(file) {
+export function loadImage(file) {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
@@ -29,7 +30,7 @@ function loadImage(file) {
   });
 }
 
-function drawScaled(source, width, height) {
+export function drawScaled(source, width, height) {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -40,7 +41,7 @@ function drawScaled(source, width, height) {
   return canvas;
 }
 
-function toBlob(canvas, format) {
+export function toBlob(canvas, format) {
   return new Promise(resolve => canvas.toBlob(resolve, format.type, format.quality));
 }
 

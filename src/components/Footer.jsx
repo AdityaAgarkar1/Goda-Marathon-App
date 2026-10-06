@@ -38,8 +38,9 @@ export default function Footer() {
         <div className="footer-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
           <div>
             <Link to="/" className="brand" style={{ marginBottom: '24px', display: 'flex' }}>
-              <Activity color="var(--color-primary)" size={28} />
-              <span>GODA<span className="text-primary">.</span></span>
+              {/* <Activity color="var(--color-primary)" size={28} /> */}
+              <img className="brand-mark" src="/banner/logo-mark.png" alt="" aria-hidden="true" width="40" height="40" />
+              <span>GODA EPIC TRAIL<span className="text-primary">.</span></span>
             </Link>
             <p className="text-muted" style={{ maxWidth: '300px', marginBottom: '24px' }}>
               Bringing people together through the power of sport. Organised by{' '}

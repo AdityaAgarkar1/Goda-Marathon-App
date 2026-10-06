@@ -9,6 +9,8 @@ import { DEFAULT_HERO_HEADLINE } from '../HeroHeadline';
 import HeroImageField from './HeroImageField';
 import HeroPreview from './HeroPreview';
 import EmailPreviewModal from './EmailPreviewModal';
+import EventFeaturesField from './EventFeaturesField';
+import { cleanEventFeatures } from '../../utils/eventFeatures';
 
 export default function EventSettings() {
   const [eventData, setEventData] = useState(null);
@@ -62,9 +64,17 @@ export default function EventSettings() {
   const hasPaymentSettings = !!eventData && 'online_payment_enabled' in eventData;
   // Likewise the email settings, which arrive with migration 0014.
   const hasEmailSettings = !!eventData && 'confirmation_emails_enabled' in eventData;
+  const hasFeatures = !!eventData && 'features' in eventData;
+
+  const setFeatures = (features) => {
+    setEventData(prev => ({ ...prev, features }));
+    setSaveMsg('');
+  };
 
   const handleSave = async () => {
     if (!eventData) return;
+    const cleanedFeatures = hasFeatures ? cleanEventFeatures(eventData.features) : null;
+    if (cleanedFeatures?.error) { setSaveMsg(cleanedFeatures.error); return; }
     setIsSaving(true);
     setSaveMsg('');
     let uploadedHero = null;
@@ -87,6 +97,7 @@ export default function EventSettings() {
           confirmation_emails_enabled: !!eventData.confirmation_emails_enabled,
           confirmation_email_note: eventData.confirmation_email_note?.trim() || null,
         } : {}),
+        ...(hasFeatures ? { features: cleanedFeatures.features } : {}),
         name: eventData.name,
         date: eventData.date,
         location: eventData.location,
@@ -107,7 +118,11 @@ export default function EventSettings() {
       // The row no longer points at the old photo; remove it if we host it.
       if (savedHero && savedHero !== heroImage) deleteStoredImageAt(savedHero);
       setSavedHero(heroImage);
-      setEventData(prev => ({ ...prev, hero_image: heroImage }));
+      setEventData(prev => ({
+        ...prev,
+        hero_image: heroImage,
+        ...(hasFeatures ? { features: cleanedFeatures.features } : {}),
+      }));
       setPendingHero(null);
       setSaveMsg('Event settings saved successfully!');
     } catch (err) {
@@ -326,6 +341,18 @@ export default function EventSettings() {
             <input id="evt-phone" name="contact_phone" value={eventData.contact_phone || ''} onChange={handleInput} placeholder="e.g. +91 82085 92273" />
           </div>
         </div>
+
+        {/* Event Details page: Features & Expo */}
+        {hasFeatures && (
+          <>
+            <h4 className="admin-form-section-title" style={{ marginTop: '1.5rem' }}>Event Details Page: Features &amp; Expo</h4>
+            <span className="admin-field-hint" style={{ marginTop: '-0.5rem', marginBottom: '0.75rem' }}>
+              Cards under "Event Features &amp; Expo" on the Event Details page, in this order. Line breaks in Details
+              are kept. Highlight adds an orange edge and a map pin, for venue and timing details. Saved with Save Changes.
+            </span>
+            <EventFeaturesField value={eventData.features} onChange={setFeatures} disabled={isSaving} />
+          </>
+        )}
       </div>
 
       {showEmailPreview && (

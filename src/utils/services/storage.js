@@ -145,6 +145,26 @@ export const uploadSponsorLogo = async (logo, originalName) => {
 };
 
 /**
+ * Upload an edition cover already resized by resizeCover(), under
+ * "<year>/covers". Returns its public URL, which is all past_events stores.
+ */
+export const uploadCoverPhoto = async (cover, originalName, year) => {
+  const path = `${safeFolder(year)}/covers/${safeStem(originalName || 'cover')}.${cover.ext}`;
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, cover.blob, {
+      contentType: cover.contentType,
+      cacheControl: '31536000',
+      upsert: false,
+    });
+  if (error) throw describeStorageError(error);
+  return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+};
+
+/** True for a cover uploaded by uploadCoverPhoto, as opposed to a gallery file or a link. */
+export const isUploadedCover = (url) => /^[^/]+\/covers\//.test(storagePathFromPublicUrl(url) || '');
+
+/**
  * Remove the file(s) behind one of our public URLs: every width of an uploaded
  * hero, or the single file of any other upload. Does nothing for a URL we do
  * not host, and never throws -- callers use it to tidy up after a save.

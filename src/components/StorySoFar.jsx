@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Flag, Mountain, Users } from 'lucide-react';
+import { ArrowRight, Mountain, Users } from 'lucide-react';
 import { resolveImageUrl } from '../utils/mediaUrl';
 import { formatDisplayDate, formatMonthYear, toInputDate } from '../utils/dates';
+import { HeroImage } from './HeroImage';
 
 // The homepage is not the archive: past this, the oldest editions drop off
 // and the "Explore past editions" link carries the rest.
@@ -76,9 +77,15 @@ function EditionTimeline({ past, event, registrationOpen }) {
 
         <li className="story-stop is-next">
           <div className="story-card story-card--next">
-            <span className="story-cover story-cover--next" aria-hidden="true">
-              <Flag size={28} />
-            </span>
+            {/* The upcoming edition's photo is the event's hero photo, set in
+                Admin -> Event Settings. Phones draw an 84px square; wider
+                screens split the row between the stops. */}
+            <HeroImage
+              src={event.hero_image}
+              className="story-cover"
+              sizes={`(min-width: 768px) ${Math.ceil(100 / (past.length + 1))}vw, 84px`}
+              lazy
+            />
             <div className="story-card-body">
               <span className="story-when">{formatMonthYear(event.date) || 'Coming up'}</span>
               <h3 className="story-title">

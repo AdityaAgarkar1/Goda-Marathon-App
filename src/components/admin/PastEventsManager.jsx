@@ -10,13 +10,16 @@ import {
   getPastEventMedia, addPastEventMedia, addPastEventMediaBulk,
   updatePastEventMedia, deletePastEventMedia, reorderPastEventMedia, syncMediaEventInfo
 } from '../../utils/services/media';
-import { uploadMedia, validateFile, bucketExists } from '../../utils/services/storage';
+import {
+  uploadMedia, validateFile, bucketExists, uploadCoverPhoto, isUploadedCover, deleteStoredImageAt
+} from '../../utils/services/storage';
 import { normalizeMediaUrl, resolveImageUrl, isHotlinkedDrive, getYouTubeId } from '../../utils/mediaUrl';
 import { formatDisplayDate, toInputDate, sanitizeYear } from '../../utils/dates';
+import CoverPhotoField from './CoverPhotoField';
 
 const emptyEvent = {
   year: '', title: '', edition_label: '', event_date: '', location: '',
-  participants: '', description: '',
+  participants: '', description: '', cover_image: '',
   display_order: 0, is_published: true,
 };
 
@@ -30,6 +33,8 @@ export default function PastEventsManager() {
   const [eventForm, setEventForm] = useState(emptyEvent);
   const [eventError, setEventError] = useState('');
   const [isSavingEvent, setIsSavingEvent] = useState(false);
+  // A resized cover photo waiting for the edition to be saved.
+  const [pendingCover, setPendingCover] = useState(null);
 
   const [media, setMedia] = useState([]);
   const [isLoadingMedia, setIsLoadingMedia] = useState(false);
@@ -55,6 +60,11 @@ export default function PastEventsManager() {
   }, []);
 
   useEffect(() => { loadEvents(); }, [loadEvents]);
+
+  // Free the preview's in-memory copy once it is replaced, discarded or saved.
+  useEffect(() => () => {
+    if (pendingCover) URL.revokeObjectURL(pendingCover.previewUrl);
+  }, [pendingCover]);
   useEffect(() => { bucketExists().then(setStorageReady); }, []);
 
   useEffect(() => {
@@ -68,6 +78,7 @@ export default function PastEventsManager() {
     setEventForm({ ...emptyEvent, display_order: events.length });
     setEditingEventId(null);
     setEventError('');
+    setPendingCover(null);
     setShowEventForm(true);
   };
 
@@ -76,11 +87,12 @@ export default function PastEventsManager() {
       year: ev.year || '', title: ev.title || '', edition_label: ev.edition_label || '',
       event_date: toInputDate(ev.event_date),
       location: ev.location || '', participants: ev.participants || '',
-      description: ev.description || '',
+      description: ev.description || '', cover_image: ev.cover_image || '',
       display_order: ev.display_order ?? 0, is_published: ev.is_published !== false,
     });
     setEditingEventId(ev.id);
     setEventError('');
+    setPendingCover(null);
     setShowEventForm(true);
   };
 
@@ -95,6 +107,17 @@ export default function PastEventsManager() {
   const closeEventForm = useCallback(() => {
     setShowEventForm(false);
     setEditingEventId(null);
+    setPendingCover(null);
+  }, []);
+
+  const setCoverImage = useCallback((url) => {
+    setEventForm(prev => ({ ...prev, cover_image: url }));
+    setEventError('');
+  }, []);
+
+  const choosePendingCover = useCallback((pending) => {
+    setPendingCover(pending);
+    setEventError('');
   }, []);
 
   // True when another edition already occupies the year being typed — drives a
@@ -110,7 +133,14 @@ export default function PastEventsManager() {
     if (!eventForm.title.trim()) { setEventError('Title is required.'); return; }
 
     setIsSavingEvent(true);
+    let uploadedCover = null;
     try {
+      let coverImage = eventForm.cover_image || null;
+      if (pendingCover) {
+        uploadedCover = await uploadCoverPhoto(pendingCover.resized, pendingCover.fileName, eventForm.year.trim());
+        coverImage = uploadedCover;
+      }
+
       const payload = {
         year: eventForm.year.trim(),
         title: eventForm.title.trim(),
@@ -119,6 +149,7 @@ export default function PastEventsManager() {
         location: eventForm.location.trim() || null,
         participants: eventForm.participants.trim() || null,
         description: eventForm.description.trim() || null,
+        cover_image: coverImage,
         display_order: parseInt(eventForm.display_order) || 0,
         is_published: eventForm.is_published,
       };
@@ -134,6 +165,11 @@ export default function PastEventsManager() {
         if (selected?.id === editingEventId) {
           setSelected(prev => ({ ...prev, ...payload }));
         }
+        // The row no longer points at the old cover. Only a file uploaded as a
+        // cover is removed; a gallery photo or a link is not ours to delete.
+        if (previous?.cover_image && previous.cover_image !== coverImage && isUploadedCover(previous.cover_image)) {
+          deleteStoredImageAt(previous.cover_image);
+        }
       } else {
         await addPastEvent(payload);
       }
@@ -141,8 +177,11 @@ export default function PastEventsManager() {
       setShowEventForm(false);
       setEditingEventId(null);
       setEventForm(emptyEvent);
+      setPendingCover(null);
       await loadEvents();
     } catch (err) {
+      // The row still points at the old cover, so the new file is an orphan.
+      if (uploadedCover) deleteStoredImageAt(uploadedCover);
       setEventError(err.message || 'Failed to save. Please try again.');
     } finally {
       setIsSavingEvent(false);
@@ -476,6 +515,10 @@ export default function PastEventsManager() {
             isSaving={isSavingEvent}
             isEditing={!!editingEventId}
             yearHasSibling={yearHasSibling}
+            savedCover={events.find(ev => ev.id === editingEventId)?.cover_image}
+            pendingCover={pendingCover}
+            onPendingCover={choosePendingCover}
+            onCoverChange={setCoverImage}
             onInput={handleEventInput}
             onSubmit={saveEvent}
             onClose={closeEventForm}
@@ -546,6 +589,10 @@ export default function PastEventsManager() {
           isSaving={isSavingEvent}
           isEditing={!!editingEventId}
           yearHasSibling={yearHasSibling}
+          savedCover={events.find(ev => ev.id === editingEventId)?.cover_image}
+          pendingCover={pendingCover}
+          onPendingCover={choosePendingCover}
+          onCoverChange={setCoverImage}
           onInput={handleEventInput}
           onSubmit={saveEvent}
           onClose={closeEventForm}
@@ -555,7 +602,11 @@ export default function PastEventsManager() {
   );
 }
 
-function EventFormModal({ form, error, isSaving, isEditing, yearHasSibling, onInput, onSubmit, onClose }) {
+function EventFormModal({
+  form, error, isSaving, isEditing, yearHasSibling,
+  savedCover, pendingCover, onPendingCover, onCoverChange,
+  onInput, onSubmit, onClose,
+}) {
   const firstFieldRef = useRef(null);
 
   // Mount only. This deliberately does NOT depend on onClose: when it did, every
@@ -589,7 +640,7 @@ function EventFormModal({ form, error, isSaving, isEditing, yearHasSibling, onIn
             <h3 id="pe-modal-title">{isEditing ? 'Edit Edition' : 'Add Edition'}</h3>
             <p className="admin-modal-subtitle">
               {isEditing
-                ? 'Update how this edition appears on the Past Events page.'
+                ? 'Update how this edition appears on the Past Events page and the homepage.'
                 : 'Create a past edition, then add its photos.'}
             </p>
           </div>
@@ -671,6 +722,18 @@ function EventFormModal({ form, error, isSaving, isEditing, yearHasSibling, onIn
             </section>
 
             <section className="admin-form-section">
+              <h4 className="admin-form-section-title">Cover Photo</h4>
+              <CoverPhotoField
+                value={form.cover_image}
+                savedValue={savedCover}
+                pending={pendingCover}
+                onPending={onPendingCover}
+                onChange={onCoverChange}
+                disabled={isSaving}
+              />
+            </section>
+
+            <section className="admin-form-section">
               <h4 className="admin-form-section-title">Visibility</h4>
               <div className="admin-toggle-row">
                 <label className="admin-toggle-label">
@@ -692,7 +755,7 @@ function EventFormModal({ form, error, isSaving, isEditing, yearHasSibling, onIn
           <div className="admin-modal-footer">
             <button type="button" className="btn btn-outline" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={isSaving}>
-              {isSaving ? 'Saving…' : isEditing ? 'Save Changes' : 'Add Edition'}
+              {isSaving ? (pendingCover ? 'Uploading photo…' : 'Saving…') : isEditing ? 'Save Changes' : 'Add Edition'}
             </button>
           </div>
         </form>
