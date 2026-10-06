@@ -1323,3 +1323,226 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   .why-item { gap: 0.9rem; }
   .why-list { gap: 1.35rem; }
 }
+
+/* ========================================
+   Sponsors
+   Logos sit on tiles of a fixed size, light or dark as chosen per sponsor in
+   the admin panel. Most press-kit logos are dark artwork on transparency and
+   would vanish on this page's near-black background without one; a fixed
+   size also keeps a wide wordmark and a square crest looking evenly weighted.
+   ======================================== */
+.sponsor-logo {
+  /* Contains the absolutely positioned .sr-only link text. Without it that
+     text escapes the strip's overflow clipping and widens the whole page. */
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.sponsor-logo.is-light {
+  background: #FFFFFF;
+}
+
+.sponsor-logo.is-dark {
+  background: var(--color-bg-surface);
+  border-color: var(--color-border);
+}
+
+.sponsor-logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+a.sponsor-logo:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-primary);
+  box-shadow: 0 8px 24px rgba(69, 229, 44, 0.15);
+}
+
+.sponsor-logo--md {
+  width: 180px;
+  height: 88px;
+  padding: 14px 20px;
+}
+
+.sponsor-logo--lg {
+  width: 260px;
+  height: 124px;
+  padding: 20px 28px;
+}
+
+/* In the hero the tile hugs the logo instead: a fixed box would leave a
+   square crest floating in a wide white slab over the photograph. */
+.sponsor-logo--hero {
+  height: 54px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.sponsor-logo--hero img {
+  width: auto;
+  max-width: 190px;
+}
+
+@media (max-width: 480px) {
+  .sponsor-logo--md { width: 144px; height: 72px; padding: 12px 16px; }
+  .sponsor-logo--lg { width: min(260px, 100%); height: 112px; }
+}
+
+/* Hero credit, between the buttons and the date/location card. */
+.hero-partners {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px 32px;
+  list-style: none;
+  margin: 36px 0 0;
+  padding: 0;
+}
+
+.hero-partner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.hero-partner-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #EDEDED;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.85);
+}
+
+/* Section */
+.sponsors-head {
+  margin-bottom: 48px;
+}
+
+.sponsors-head p {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.sponsors-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+.sponsors-featured {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 32px 48px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sponsors-featured-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 100%;
+}
+
+.sponsors-strip-caption {
+  margin: 56px 0 20px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+/* Logo strip */
+.sponsor-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.sponsor-strip-viewport {
+  width: 100%;
+  overflow: hidden;
+  /* Room for the hover lift and the focus ring, which overflow would clip. */
+  padding: 8px 0;
+}
+
+.sponsor-strip-track {
+  display: flex;
+  gap: var(--strip-gap);
+  width: max-content;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.sponsor-strip-list {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--strip-gap);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sponsor-strip.is-animated .sponsor-strip-viewport {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 64px, #000 calc(100% - 64px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 64px, #000 calc(100% - 64px), transparent);
+}
+
+.sponsor-strip.is-animated .sponsor-strip-track {
+  padding: 0;
+  animation: sponsor-strip-scroll var(--strip-duration, 30s) linear infinite;
+}
+
+.sponsor-strip.is-animated .sponsor-strip-viewport:hover .sponsor-strip-track,
+.sponsor-strip.is-animated .sponsor-strip-viewport:focus-within .sponsor-strip-track,
+.sponsor-strip.is-paused .sponsor-strip-track {
+  animation-play-state: paused;
+}
+
+/* One copy of the list plus the gap after it: the second copy then sits
+   exactly where the first began, so the jump back to 0 is invisible. */
+@keyframes sponsor-strip-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-50% - var(--strip-gap) / 2)); }
+}
+
+.sponsor-strip.is-scrollable .sponsor-strip-viewport {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.sponsor-strip-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border-light);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.sponsor-strip-toggle:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}

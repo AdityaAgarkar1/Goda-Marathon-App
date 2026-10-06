@@ -11,9 +11,11 @@ import { TestimonialCarousel } from '../components/TestimonialCarousel';
 import { FaqAccordion } from '../components/FaqAccordion';
 import { HeroImage } from '../components/HeroImage';
 import { HeroHeadline, DEFAULT_HERO_HEADLINE } from '../components/HeroHeadline';
+import { HeroPartners, SponsorsSection } from '../components/Sponsors';
 
 import { getCurrentEvent } from '../utils/services/events';
 import { getEventCategories } from '../utils/services/categories';
+import { getPublishedSponsors } from '../utils/services/sponsors';
 import { CURRENT_EVENT } from '../utils/constants';
 import { formatHeroDate, buildCountdownTarget } from '../utils/dates';
 
@@ -50,12 +52,18 @@ export default function Home() {
   const [expandedRoute, setExpandedRoute] = useState(null);
   const [event, setEvent] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [sponsors, setSponsors] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
+      // Requested alongside the event rather than after it, and awaited before
+      // the first paint so a featured partner's hero credit does not pop in
+      // and push the page down. Never rejects: a failure is an empty list.
+      const sponsorsRequest = getPublishedSponsors();
+
       try {
         const data = await getCurrentEvent();
         if (cancelled) return;
@@ -67,9 +75,12 @@ export default function Home() {
         }
       } catch {
         if (!cancelled) setEvent(FALLBACK_EVENT);
-      } finally {
-        if (!cancelled) setIsLoading(false);
       }
+
+      const rows = await sponsorsRequest;
+      if (cancelled) return;
+      setSponsors(rows);
+      setIsLoading(false);
     })();
 
     return () => { cancelled = true; };
@@ -156,6 +167,8 @@ export default function Home() {
             )}
             <Link to="/past-events" className="w-full sm:w-auto"><Button variant="outline" style={{ fontSize: '1.125rem', padding: '16px 40px', width: '100%' }}>View Past Events</Button></Link>
           </motion.div>
+
+          <HeroPartners sponsors={sponsors} />
 
           <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="glass flex flex-col md:flex-row gap-8 md:gap-10 justify-center items-center w-full max-w-4xl" style={{ marginTop: '60px', padding: '24px', borderRadius: '16px' }}>
             <div className="text-center">
@@ -359,6 +372,7 @@ export default function Home() {
       </section>
 
       {/* Each renders its own section, or nothing at all when unconfigured. */}
+      <SponsorsSection sponsors={sponsors} edition={e.edition} />
       <TestimonialCarousel />
       <FaqAccordion />
     </div>

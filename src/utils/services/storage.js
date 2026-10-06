@@ -8,6 +8,7 @@ export const BUCKET = 'past-events';
 export const MAX_FILE_BYTES = 10 * 1024 * 1024; // must match the bucket's file_size_limit
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 export const ACCEPTED_VIDEO_TYPES = ['video/mp4'];
+export const SPONSOR_FOLDER = 'sponsors';
 
 /**
  * Sanitise a folder path one segment at a time, so nesting like
@@ -124,6 +125,23 @@ export const uploadHeroVariants = async (resized, originalName) => {
   }
 
   return supabase.storage.from(BUCKET).getPublicUrl(pathFor(resized.width)).data.publicUrl;
+};
+
+/**
+ * Upload a sponsor logo already processed by prepareLogo(). Returns its
+ * public URL, which is all the sponsors row stores.
+ */
+export const uploadSponsorLogo = async (logo, originalName) => {
+  const path = `${SPONSOR_FOLDER}/${safeStem(originalName || 'logo')}.${logo.ext}`;
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, logo.blob, {
+      contentType: logo.contentType,
+      cacheControl: '31536000',
+      upsert: false,
+    });
+  if (error) throw describeStorageError(error);
+  return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
 };
 
 /**

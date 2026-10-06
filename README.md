@@ -96,6 +96,7 @@ Apply them **in order** in the Supabase SQL editor, or with
 | `0010_group_registrations_and_coupons.sql` | Bulk (group) entries and real discount codes |
 | `0011_razorpay_payments.sql` | Online payment: reservations with a deadline, `payments` table, settlement functions |
 | `0012_cancel_reservation.sql` | Lets a runner release their own unpaid reservation from the payment step |
+| `0015_sponsors.sql` | Sponsor logos for the homepage strip and hero partner credit (Admin → Content → Sponsors) |
 
 0009 is not optional. 0006 removed the old permissive policies by name, which
 missed allow-all policies that had been created outside these migrations. It

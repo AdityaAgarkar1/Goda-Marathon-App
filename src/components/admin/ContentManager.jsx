@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Plus, X, Trash2, Edit3, ArrowUp, ArrowDown, Eye, EyeOff,
-  HelpCircle, Quote, Star, AlertTriangle
+  Plus, Trash2, Edit3, ArrowUp, ArrowDown, Eye, EyeOff,
+  HelpCircle, Quote, Star, AlertTriangle, Handshake
 } from 'lucide-react';
+import ContentModal from './ContentModal';
+import SponsorManager from './SponsorManager';
 import {
   getAllFaqs, addFaq, updateFaq, deleteFaq, reorderFaqs,
   getAllTestimonials, addTestimonial, updateTestimonial, deleteTestimonial, reorderTestimonials,
@@ -35,10 +37,19 @@ export default function ContentManager() {
           >
             <Quote size={18} /> <span className="admin-action-label">Testimonials</span>
           </button>
+          <button
+            className={`btn ${view === 'sponsors' ? 'btn-primary' : 'btn-outline'} admin-action-btn`}
+            onClick={() => setView('sponsors')}
+            style={{ gap: '6px' }}
+          >
+            <Handshake size={18} /> <span className="admin-action-label">Sponsors</span>
+          </button>
         </div>
       </div>
 
-      {view === 'faqs' ? <FaqSection /> : <TestimonialSection />}
+      {view === 'faqs' && <FaqSection />}
+      {view === 'testimonials' && <TestimonialSection />}
+      {view === 'sponsors' && <SponsorManager />}
     </div>
   );
 }
@@ -389,52 +400,6 @@ function TestimonialSection() {
           </div>
         </ContentModal>
       )}
-    </div>
-  );
-}
-
-/* ── Shared modal shell ───────────────────────────────────────────────────── */
-
-function ContentModal({ title, error, isSaving, onSubmit, onClose, children }) {
-  // Mount-only: focus and scroll lock must not re-run on every keystroke.
-  useEffect(() => {
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prevOverflow; };
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  return (
-    <div className="admin-modal-overlay" onClick={onClose}>
-      <div
-        className="admin-modal admin-modal--wide glass"
-        onClick={e => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-      >
-        <div className="admin-modal-header">
-          <h3>{title}</h3>
-          <button className="admin-modal-close" onClick={onClose} aria-label="Close"><X size={20} /></button>
-        </div>
-        <form onSubmit={onSubmit} className="admin-modal-form">
-          <div className="admin-modal-body">
-            <section className="admin-form-section">{children}</section>
-            {error && <div className="admin-login-error" style={{ marginTop: '1rem' }}><span>{error}</span></div>}
-          </div>
-          <div className="admin-modal-footer">
-            <button type="button" className="btn btn-outline" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-primary" disabled={isSaving}>
-              {isSaving ? 'Saving…' : 'Save'}
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 }

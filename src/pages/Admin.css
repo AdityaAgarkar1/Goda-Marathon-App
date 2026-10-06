@@ -2602,3 +2602,114 @@
   .admin-group-money { grid-column: auto; }
   .admin-group-money { align-items: flex-start; }
 }
+
+/* ========================================
+   Sponsors (Content tab)
+   Thumbnails and the picker preview use the same light/dark tile as the
+   homepage, so what is chosen here is what visitors see.
+   ======================================== */
+.admin-sponsor-row {
+  align-items: center;
+}
+
+.admin-sponsor-thumb,
+.admin-logo-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.admin-sponsor-thumb {
+  width: 120px;
+  height: 58px;
+  padding: 8px 12px;
+}
+
+.admin-sponsor-thumb.is-light,
+.admin-logo-preview.is-light {
+  background: #FFFFFF;
+}
+
+.admin-sponsor-thumb.is-dark,
+.admin-logo-preview.is-dark {
+  background: var(--color-bg-surface);
+  border-color: var(--color-border);
+}
+
+.admin-sponsor-thumb img,
+.admin-logo-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.admin-content-flag--featured {
+  background: rgba(69, 229, 44, 0.12);
+  border-color: rgba(69, 229, 44, 0.3);
+  color: var(--color-primary);
+}
+
+.admin-sponsor-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.admin-sponsor-link:hover {
+  color: var(--color-primary);
+}
+
+.admin-logo-field {
+  align-items: stretch;
+}
+
+/* The homepage strip tile, at its real size. */
+.admin-logo-preview {
+  width: 180px;
+  height: 88px;
+  padding: 14px 20px;
+  color: #777;
+}
+
+.admin-logo-preview-empty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.admin-logo-preview.is-dark .admin-logo-preview-empty {
+  color: var(--color-text-muted);
+}
+
+.admin-logo-field-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+/* Its 220px basis is a width in the hero field's row; in this column it
+   would become a 220px-tall gap. */
+.admin-logo-field-side .admin-hero-field-status {
+  flex: 0 0 auto;
+}
+
+.admin-logo-field-side .admin-chip-row {
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .admin-sponsor-thumb { width: 96px; height: 48px; }
+  .admin-logo-preview { width: 100%; }
+}
