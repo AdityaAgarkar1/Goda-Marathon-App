@@ -854,6 +854,29 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   margin: 0 auto;
 }
 
+/* The organisers' story, above the timeline: a strong opening line, then a
+   short paragraph. Left-aligned below the centred heading would look stray,
+   so it stays centred but narrow enough to read comfortably. */
+.story-intro {
+  max-width: 680px;
+  margin: 0 auto 20px;
+}
+
+.story-lead {
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--color-text-main);
+  margin-bottom: 8px;
+}
+
+.story-body {
+  color: #D4D4D4;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  white-space: pre-line;
+}
+
 .story-timeline {
   --rail-gap: 16px;
   --dot: 14px;
@@ -1059,6 +1082,129 @@ a.story-card:hover {
 }
 
 /* ========================================
+   Homepage first-timer guide (#first-timers)
+   Starter distances come first and are wider than a tip, since choosing a
+   distance is the question a first-timer actually arrives with.
+   ======================================== */
+.guide-section {
+  background-color: #050505;
+  border-top: 1px solid var(--color-border);
+}
+
+.guide-head {
+  margin-bottom: 48px;
+}
+
+.guide-head h2 {
+  font-size: 2.5rem;
+}
+
+.guide-head p {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.guide-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+
+.guide-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 24px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.guide-card h3 {
+  font-size: 1.15rem;
+  margin: 14px 0 6px;
+}
+
+.guide-card p {
+  margin: 0;
+  color: #D4D4D4;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.guide-card--pick {
+  border-color: rgba(69, 229, 44, 0.45);
+  background:
+    radial-gradient(130% 150% at 0% 0%, rgba(69, 229, 44, 0.12), transparent 62%),
+    var(--color-bg-surface-light);
+}
+
+@media (min-width: 900px) {
+  .guide-card--pick {
+    grid-column: span 2;
+  }
+}
+
+.guide-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(69, 229, 44, 0.12);
+  color: var(--color-primary);
+}
+
+.guide-starters {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin: 4px 0 16px;
+}
+
+.guide-starters li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 14px;
+  border-left: 2px solid var(--color-primary);
+}
+
+.guide-starter-audience {
+  color: #D4D4D4;
+  font-size: 0.92rem;
+}
+
+.guide-starter-facts {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.guide-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.guide-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.guide-help {
+  margin: 32px 0 0;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+/* ========================================
    Category cards
    ======================================== */
 .cat-grid {
@@ -1161,6 +1307,41 @@ a.story-card:hover {
   font-size: 1.15rem;
   font-weight: 700;
   margin-bottom: 6px;
+}
+
+/* Who the distance suits. A coloured dot rather than a coloured pill, so it
+   does not compete with the slots badge in the header: green, amber, red is
+   the easy / moderate / hard convention runners already know from trail
+   grading. */
+.cat-card-level {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--color-text-muted);
+}
+
+.cat-card-level::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.cat-card-level.is-beginner { color: var(--color-primary); }
+.cat-card-level.is-intermediate { color: #F5C542; }
+.cat-card-level.is-experienced { color: #FF7A7A; }
+
+.cat-card-audience {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #D4D4D4;
 }
 
 .cat-card-meta {

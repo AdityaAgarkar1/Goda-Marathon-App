@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Plus, Trash2, Edit3, ArrowUp, ArrowDown, Eye, EyeOff,
-  HelpCircle, Quote, Star, AlertTriangle, Handshake
+  HelpCircle, Quote, Star, AlertTriangle, Handshake, House
 } from 'lucide-react';
 import ContentModal from './ContentModal';
 import SponsorManager from './SponsorManager';
+import HomepageBlocksManager from './HomepageBlocksManager';
 import {
   getAllFaqs, addFaq, updateFaq, deleteFaq, reorderFaqs,
   getAllTestimonials, addTestimonial, updateTestimonial, deleteTestimonial, reorderTestimonials,
@@ -16,13 +17,20 @@ const emptyTestimonial = {
 };
 
 export default function ContentManager() {
-  const [view, setView] = useState('faqs');
+  const [view, setView] = useState('homepage');
 
   return (
     <div>
       <div className="admin-media-header">
         <h3 style={{ margin: 0 }}>Site Content</h3>
-        <div style={{ display: 'flex', gap: '6px' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          <button
+            className={`btn ${view === 'homepage' ? 'btn-primary' : 'btn-outline'} admin-action-btn`}
+            onClick={() => setView('homepage')}
+            style={{ gap: '6px' }}
+          >
+            <House size={18} /> <span className="admin-action-label">Homepage</span>
+          </button>
           <button
             className={`btn ${view === 'faqs' ? 'btn-primary' : 'btn-outline'} admin-action-btn`}
             onClick={() => setView('faqs')}
@@ -47,6 +55,7 @@ export default function ContentManager() {
         </div>
       </div>
 
+      {view === 'homepage' && <HomepageBlocksManager />}
       {view === 'faqs' && <FaqSection />}
       {view === 'testimonials' && <TestimonialSection />}
       {view === 'sponsors' && <SponsorManager />}

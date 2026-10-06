@@ -31,6 +31,12 @@ export function describeSaveError(error, subject = 'changes') {
     return `Cannot save: something else still refers to these ${subject}.`;
   }
 
+  // PostgREST's "unknown column": the admin form is newer than the database,
+  // which means a migration has not been run yet.
+  if (code === 'PGRST204' || /could not find the '.+' column/i.test(message)) {
+    return `The database is missing a field these ${subject} need. Run the newest file in supabase/migrations in the Supabase SQL editor, then try again.`;
+  }
+
   if (code === '23514' || /check constraint/i.test(message)) {
     return `One of the values is not allowed. Check the ${subject} and try again.`;
   }

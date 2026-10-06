@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
-import { Calendar, MapPin, Mountain, Trophy, ShieldCheck, ChevronDown, ChevronUp, Loader, Check, Clock, TrendingUp } from 'lucide-react';
+import { Calendar, MapPin, Mountain, Users, ChevronDown, ChevronUp, Loader, Check, Clock, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import Seo from '../components/Seo';
@@ -13,11 +13,15 @@ import { HeroImage } from '../components/HeroImage';
 import { HeroHeadline, DEFAULT_HERO_HEADLINE } from '../components/HeroHeadline';
 import { HeroPartners, SponsorsSection } from '../components/Sponsors';
 import { StorySoFar } from '../components/StorySoFar';
+import { Highlights } from '../components/Highlights';
+import { FirstTimerGuide } from '../components/FirstTimerGuide';
 
 import { getCurrentEvent } from '../utils/services/events';
 import { getEventCategories } from '../utils/services/categories';
 import { getPublishedSponsors } from '../utils/services/sponsors';
 import { getPublishedPastEvents } from '../utils/services/pastEvents';
+import { getPublishedHomepageBlocks } from '../utils/services/homepageBlocks';
+import { levelLabel } from '../utils/categoryLevels';
 import { CURRENT_EVENT } from '../utils/constants';
 import { formatHeroDate, buildCountdownTarget } from '../utils/dates';
 
@@ -92,6 +96,7 @@ export default function Home() {
   const [categories, setCategories] = useState([]);
   const [sponsors, setSponsors] = useState([]);
   const [pastEditions, setPastEditions] = useState([]);
+  const [blocks, setBlocks] = useState({ story: [], usp: [], tip: [] });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -100,12 +105,13 @@ export default function Home() {
     (async () => {
       // Requested alongside the event rather than after it, and awaited before
       // the first paint so a featured partner's hero credit does not pop in
-      // and push the page down. Past editions are held back for the same
-      // reason: the timeline sits above the categories, and arriving late it
-      // would shove them away from a visitor who had already scrolled there.
-      // Neither rejects: a failure is an empty list.
+      // and push the page down. Past editions and the homepage copy blocks are
+      // held back for the same reason: they sit above the categories, and
+      // arriving late they would shove them away from a visitor who had
+      // already scrolled there. None of these rejects: a failure is empty.
       const sponsorsRequest = getPublishedSponsors();
       const pastEditionsRequest = getPublishedPastEvents();
+      const blocksRequest = getPublishedHomepageBlocks();
 
       try {
         const data = await getCurrentEvent();
@@ -120,10 +126,13 @@ export default function Home() {
         if (!cancelled) setEvent(FALLBACK_EVENT);
       }
 
-      const [sponsorRows, editionRows] = await Promise.all([sponsorsRequest, pastEditionsRequest]);
+      const [sponsorRows, editionRows, blockGroups] = await Promise.all([
+        sponsorsRequest, pastEditionsRequest, blocksRequest,
+      ]);
       if (cancelled) return;
       setSponsors(sponsorRows);
       setPastEditions(editionRows);
+      setBlocks(blockGroups);
       setIsLoading(false);
     })();
 
@@ -168,6 +177,11 @@ export default function Home() {
     maxElevation > 0 && `up to ${maxElevation}m elevation`,
   ].filter(Boolean).join(' · ');
 
+  // The first-timer guide renders when there is a beginner distance or a tip
+  // to show, and the hero's second button points at it when it does.
+  const starters = categories.filter(c => c.level === 'beginner');
+  const hasFirstTimerGuide = starters.length > 0 || blocks.tip.length > 0;
+
   return (
     <div>
       <Seo
@@ -206,9 +220,14 @@ export default function Home() {
             ) : (
               <Link to="/event" className="w-full sm:w-auto"><Button variant="primary" style={{ fontSize: '1.125rem', padding: '16px 40px', width: '100%' }}>View Event</Button></Link>
             )}
-            {/* Past editions are on this page now (the timeline below), so
-                the second slot goes to what most visitors scroll for. */}
-            <Link to="/#categories" className="w-full sm:w-auto"><Button variant="outline" style={{ fontSize: '1.125rem', padding: '16px 40px', width: '100%' }}>Find Your Distance</Button></Link>
+            {/* Past editions are on this page now (the timeline below), so the
+                second slot goes to first-timers, or to the distances while
+                there is no guide to send them to. */}
+            <Link to={hasFirstTimerGuide ? '/#first-timers' : '/#categories'} className="w-full sm:w-auto">
+              <Button variant="outline" style={{ fontSize: '1.125rem', padding: '16px 40px', width: '100%' }}>
+                {hasFirstTimerGuide ? 'New to Trails? Start Here' : 'Find Your Distance'}
+              </Button>
+            </Link>
           </motion.div>
 
           <HeroPartners sponsors={sponsors} />
@@ -245,7 +264,10 @@ export default function Home() {
       </section>
 
       {/* Past editions leading up to this one. Renders nothing until one is published. */}
-      <StorySoFar editions={pastEditions} event={e} registrationOpen={registrationOpen} />
+      <StorySoFar story={blocks.story} editions={pastEditions} event={e} registrationOpen={registrationOpen} />
+
+      {/* "What makes it different". Renders nothing until a point is published. */}
+      <Highlights items={blocks.usp} />
 
       {/* Categories */}
       <section id="categories" className="section">
@@ -271,6 +293,7 @@ export default function Home() {
                 const isAvailable = registrationOpen && status === 'Open';
                 const badge = categoryBadge(status, slotsLeft, registrationOpen);
                 const elevation = cat.elevation && cat.elevation !== '0m' ? cat.elevation : null;
+                const level = levelLabel(cat.level);
 
                 return (
                   <motion.article
@@ -289,12 +312,15 @@ export default function Home() {
                     </header>
 
                     <div className="cat-card-body">
+                      {level && <span className={`cat-card-level is-${cat.level}`}>{level}</span>}
                       <h3 className="cat-card-name">{cat.name}</h3>
+                      {cat.audience && <p className="cat-card-audience">{cat.audience}</p>}
 
-                      {(elevation || cat.flag_off_time) && (
+                      {(elevation || cat.flag_off_time || cat.min_age) && (
                         <div className="cat-card-meta">
                           {elevation && <span><TrendingUp size={14} /> {elevation} elevation</span>}
                           {cat.flag_off_time && <span><Clock size={14} /> {cat.flag_off_time}</span>}
+                          {cat.min_age && <span><Users size={14} /> Ages {cat.min_age}+</span>}
                         </div>
                       )}
 
@@ -360,46 +386,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Why Join Section */}
-      <section className="section" style={{ backgroundColor: '#0A0A0A', borderTop: '1px solid var(--color-border)' }}>
-        <div className="container">
-          <motion.div
-            variants={fadeUpVariant}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="why-grid"
-          >
-            <div className="why-media">
-              <img src="/images/trail_event2.png" alt="Runners climbing a grass ridge on the trail course" />
-            </div>
-
-            <div className="why-body">
-              <h2 className="why-title">
-                More Than Just A Race.<br />
-                It&apos;s an <span className="accent-text">Experience.</span>
-              </h2>
-
-              <ul className="why-list">
-                <li className="why-item">
-                  <span className="why-icon" aria-hidden="true"><ShieldCheck size={26} /></span>
-                  <div>
-                    <h3>World-Class Organization</h3>
-                    <p>Seamless registration, secure bag drops, and meticulously planned routes with zero traffic disruptions.</p>
-                  </div>
-                </li>
-                <li className="why-item">
-                  <span className="why-icon" aria-hidden="true"><Trophy size={26} /></span>
-                  <div>
-                    <h3>Premium Race Kit</h3>
-                    <p>Every runner receives a high-quality Dri-FIT tee, a personalised bib, and our heavy-weight custom sculpted medal.</p>
-                  </div>
-                </li>
-              </ul>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      {/* Starter distances and tips. Renders nothing when there are neither. */}
+      <FirstTimerGuide tips={blocks.tip} starters={starters} />
 
       {/* Each renders its own section, or nothing at all when unconfigured. */}
       <SponsorsSection sponsors={sponsors} edition={e.edition} />

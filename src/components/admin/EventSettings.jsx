@@ -297,7 +297,8 @@ export default function EventSettings() {
                 onChange={handleInput}
                 rows={4}
                 style={{ resize: 'vertical' }}
-                placeholder={'Kit collection: Decathlon Nashik, 11–12 Dec, 10 am – 7 pm\nReporting time: 5:45 am at the start arch\nBring: photo ID and this email'}
+                // placeholder={'Kit collection: Decathlon Nashik, 11–12 Dec, 10 am – 7 pm\nReporting time: 5:45 am at the start arch\nBring: photo ID and this email'}
+                placeholder={'To Be Announced'}
               />
               <span className="admin-field-hint">
                 Printed in every confirmation email sent after you save. Leave empty until the details are final.

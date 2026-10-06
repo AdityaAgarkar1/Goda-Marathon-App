@@ -3,6 +3,7 @@ import { Button } from '../../components/Button';
 import { Field } from './Field';
 import { controlClass } from './controls';
 import { Check, Lock } from 'lucide-react';
+import { levelLabel } from '../../utils/categoryLevels';
 
 /**
  * Step 1 — the race itself.
@@ -98,8 +99,11 @@ export default function StepRace({
                   <span className="reg-category-main">
                     <span className="reg-category-name">{cat.name}</span>
                     <span className="reg-category-meta">
-                      {[cat.distance, cat.elevation && cat.elevation !== '0m' ? `${cat.elevation} elevation` : null]
-                        .filter(Boolean).join(' · ')}
+                      {[
+                        cat.distance,
+                        levelLabel(cat.level),
+                        cat.elevation && cat.elevation !== '0m' ? `${cat.elevation} elevation` : null,
+                      ].filter(Boolean).join(' · ')}
                     </span>
                   </span>
 

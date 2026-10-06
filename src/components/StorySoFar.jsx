@@ -50,14 +50,70 @@ function EditionCover({ src }) {
   );
 }
 
+/** Past editions, oldest first, ending at the upcoming one. */
+function EditionTimeline({ past, event, registrationOpen }) {
+  return (
+    <>
+      <ol className="story-timeline" style={{ '--stops': past.length + 1 }}>
+        {past.map(edition => (
+          <li key={edition.id} className="story-stop">
+            <Link to={`/past-events?edition=${edition.id}`} className="story-card">
+              <EditionCover src={edition.cover_image} />
+              <div className="story-card-body">
+                <span className="story-when">
+                  {formatMonthYear(edition.event_date) || edition.year}
+                </span>
+                <h3 className="story-title">{edition.title}</h3>
+                {edition.participants && (
+                  <span className="story-meta">
+                    <Users size={15} aria-hidden="true" /> {runnersLabel(edition.participants)}
+                  </span>
+                )}
+              </div>
+            </Link>
+          </li>
+        ))}
+
+        <li className="story-stop is-next">
+          <div className="story-card story-card--next">
+            <span className="story-cover story-cover--next" aria-hidden="true">
+              <Flag size={28} />
+            </span>
+            <div className="story-card-body">
+              <span className="story-when">{formatMonthYear(event.date) || 'Coming up'}</span>
+              <h3 className="story-title">
+                {event.edition ? `${event.edition} Edition` : 'Next Edition'}
+              </h3>
+              <span className="story-meta story-meta--next">Your turn.</span>
+              <Link to={registrationOpen ? '/register' : '/event'} className="story-next-link">
+                {registrationOpen ? 'Register now' : 'Event details'}
+                <ArrowRight size={16} aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+        </li>
+      </ol>
+
+      <p className="story-more">
+        <Link to="/past-events">
+          Explore past editions <ArrowRight size={16} aria-hidden="true" />
+        </Link>
+      </p>
+    </>
+  );
+}
+
 /**
- * Past editions as a timeline that ends at the upcoming one, so the event is
- * introduced as the next chapter of something that already happened rather
- * than behind a "View Past Events" button. Renders nothing until at least one
- * past edition is published.
+ * The organisers' story, then past editions as a timeline that ends at the
+ * upcoming one, so the event is introduced as the next chapter of something
+ * that already happened rather than behind a "View Past Events" button.
+ *
+ * `story` is the "Our Story" blocks from Admin -> Content -> Homepage: each a
+ * strong opening line (title) and a short paragraph (body). Renders nothing
+ * until there is a story or at least one published past edition.
  */
-export function StorySoFar({ editions, event, registrationOpen }) {
-  if (editions.length === 0) return null;
+export function StorySoFar({ story = [], editions, event, registrationOpen }) {
+  if (story.length === 0 && editions.length === 0) return null;
 
   const past = [...editions]
     .sort((a, b) => chronologicalKey(a).localeCompare(chronologicalKey(b)))
@@ -81,54 +137,18 @@ export function StorySoFar({ editions, event, registrationOpen }) {
       >
         <div className="text-center story-head">
           <h2 id="story-heading">The Story <span className="accent-text">So Far</span></h2>
-          <p className="text-muted">{countText}{nextText}</p>
+          {story.map(block => (
+            <div key={block.id} className="story-intro">
+              <p className="story-lead">{block.title}</p>
+              {block.body && <p className="story-body">{block.body}</p>}
+            </div>
+          ))}
+          {past.length > 0 && <p className="text-muted">{countText}{nextText}</p>}
         </div>
 
-        <ol className="story-timeline" style={{ '--stops': past.length + 1 }}>
-          {past.map(edition => (
-            <li key={edition.id} className="story-stop">
-              <Link to={`/past-events?edition=${edition.id}`} className="story-card">
-                <EditionCover src={edition.cover_image} />
-                <div className="story-card-body">
-                  <span className="story-when">
-                    {formatMonthYear(edition.event_date) || edition.year}
-                  </span>
-                  <h3 className="story-title">{edition.title}</h3>
-                  {edition.participants && (
-                    <span className="story-meta">
-                      <Users size={15} aria-hidden="true" /> {runnersLabel(edition.participants)}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            </li>
-          ))}
-
-          <li className="story-stop is-next">
-            <div className="story-card story-card--next">
-              <span className="story-cover story-cover--next" aria-hidden="true">
-                <Flag size={28} />
-              </span>
-              <div className="story-card-body">
-                <span className="story-when">{formatMonthYear(event.date) || 'Coming up'}</span>
-                <h3 className="story-title">
-                  {event.edition ? `${event.edition} Edition` : 'Next Edition'}
-                </h3>
-                <span className="story-meta story-meta--next">Your turn.</span>
-                <Link to={registrationOpen ? '/register' : '/event'} className="story-next-link">
-                  {registrationOpen ? 'Register now' : 'Event details'}
-                  <ArrowRight size={16} aria-hidden="true" />
-                </Link>
-              </div>
-            </div>
-          </li>
-        </ol>
-
-        <p className="story-more">
-          <Link to="/past-events">
-            Explore past editions <ArrowRight size={16} aria-hidden="true" />
-          </Link>
-        </p>
+        {past.length > 0 && (
+          <EditionTimeline past={past} event={event} registrationOpen={registrationOpen} />
+        )}
       </motion.div>
     </section>
   );

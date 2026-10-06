@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, X, Trash2, Edit3, Users } from 'lucide-react';
 import { getEventCategories, addEventCategory, updateEventCategory, deleteEventCategory } from '../../utils/services/categories';
 import { describeSaveError } from '../../utils/services/errors';
+import { CATEGORY_LEVELS, levelLabel } from '../../utils/categoryLevels';
 
 export default function CategoryManager({ eventId, eventSlug }) {
   const [categories, setCategories] = useState([]);
@@ -16,7 +17,9 @@ export default function CategoryManager({ eventId, eventSlug }) {
     min_age: 5, max_slots: 200, flag_off_time: '',
     status: 'Open', display_order: 0,
     // Edited as one-per-line text; stored as a jsonb array.
-    perks: '', elevation_image: ''
+    perks: '', elevation_image: '',
+    // Who the distance suits (0016). Empty saves as NULL, which hides it.
+    level: '', audience: '',
   };
   const [formData, setFormData] = useState(emptyForm);
 
@@ -69,6 +72,8 @@ export default function CategoryManager({ eventId, eventSlug }) {
         display_order: parseInt(formData.display_order) || 0,
         perks: linesToPerks(formData.perks),
         elevation_image: formData.elevation_image.trim() || null,
+        level: formData.level || null,
+        audience: formData.audience.trim() || null,
       };
 
       if (editingId) {
@@ -97,6 +102,7 @@ export default function CategoryManager({ eventId, eventSlug }) {
       flag_off_time: cat.flag_off_time || '', status: cat.status || 'Open',
       display_order: cat.display_order || 0,
       perks: perksToLines(cat.perks), elevation_image: cat.elevation_image || '',
+      level: cat.level || '', audience: cat.audience || '',
     });
     setEditingId(cat.id);
     setShowForm(true);
@@ -180,6 +186,29 @@ export default function CategoryManager({ eventId, eventSlug }) {
               <label>Display Order</label>
               <input name="display_order" type="number" value={formData.display_order} onChange={handleInput} />
             </div>
+            <div className="admin-media-form-group">
+              <label htmlFor="cat-level">Level</label>
+              <select id="cat-level" name="level" value={formData.level} onChange={handleInput}>
+                <option value="">Not set</option>
+                {CATEGORY_LEVELS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="admin-media-form-group" style={{ marginTop: '0.75rem' }}>
+            <label htmlFor="cat-audience">Who It&apos;s For</label>
+            <input
+              id="cat-audience"
+              name="audience"
+              value={formData.audience}
+              onChange={handleInput}
+              maxLength={140}
+              placeholder="e.g. First-timers and families; walking is fine"
+            />
+            <span className="admin-field-hint">
+              One line under the category name on the homepage card. Beginner-friendly
+              distances are also listed in the homepage&apos;s first-timer guide.
+            </span>
           </div>
 
           {/* Homepage card content */}
@@ -242,6 +271,7 @@ export default function CategoryManager({ eventId, eventSlug }) {
                   <div className="admin-cat-meta">
                     <span>Min Age: {cat.min_age || 5}</span>
                     <span>Flag-off: {cat.flag_off_time || '—'}</span>
+                    <span>Level: {levelLabel(cat.level) || 'Not set'}</span>
                   </div>
                   <div className="admin-cat-slots">
                     <div className="admin-cat-slots-label">

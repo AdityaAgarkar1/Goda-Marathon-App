@@ -151,6 +151,7 @@ export default function Register() {
           minAge: c.min_age || 5,
           distance: c.distance,
           elevation: c.elevation,
+          level: c.level || null,
           slotsLeft,
           status: slotsLeft === 0 ? 'Sold Out' : (c.status || 'Open'),
         };
