@@ -32,6 +32,22 @@ export function formatDisplayDate(value) {
   });
 }
 
+/**
+ * "2025-03-02" → "March 2025", for a timeline where the day adds nothing.
+ * Free text is returned untouched, as in formatDisplayDate.
+ */
+export function formatMonthYear(value) {
+  if (!value) return '';
+  const raw = String(value).trim();
+  if (!ISO_DATE.test(raw)) return raw;
+
+  const [y, m] = raw.split('-').map(Number);
+  const date = new Date(y, m - 1, 1);
+  if (Number.isNaN(date.getTime())) return raw;
+
+  return date.toLocaleDateString('en-IN', { year: 'numeric', month: 'long' });
+}
+
 const MONTH_NAME = /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i;
 const DAY_NUMBER = /\b([1-9]|[12]\d|3[01])\b/;
 const NUMERIC_DATE = /^\d{1,4}[/-]\d{1,2}[/-]\d{1,4}$/;

@@ -831,40 +831,231 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 }
 
 /* ========================================
-   Homepage stat band
-   Flex rather than a fixed 4-column grid: the number of stats varies with how
-   much of the event is configured, and a centred row reads as deliberate at
-   any count.
+   Homepage "The Story So Far"
+   Past editions as a timeline ending at the upcoming one. On phones it runs
+   down the page with a rail on the left and compact rows, so three editions
+   cost about as much height as the stats band this replaced; from tablet up
+   it runs across, one column per stop.
    ======================================== */
-.stat-band {
+.story-section {
+  background-color: #050505;
+}
+
+.story-head {
+  margin-bottom: 48px;
+}
+
+.story-head h2 {
+  font-size: 2.5rem;
+}
+
+.story-head p {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.story-timeline {
+  --rail-gap: 16px;
+  --dot: 14px;
+  list-style: none;
+  display: grid;
+  gap: var(--rail-gap);
+}
+
+.story-stop {
+  position: relative;
+  padding-left: 30px;
+}
+
+/* The stop's dot on the rail */
+.story-stop::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: var(--dot);
+  height: var(--dot);
+  margin-top: calc(var(--dot) / -2);
+  border-radius: 50%;
+  background: var(--color-bg-base);
+  border: 2px solid var(--color-border-light);
+}
+
+/* The rail from this dot to the next */
+.story-stop::after {
+  content: '';
+  position: absolute;
+  left: calc(var(--dot) / 2 - 1px);
+  top: calc(50% + var(--dot) / 2);
+  height: calc(100% + var(--rail-gap) - var(--dot));
+  width: 2px;
+  background: var(--color-border);
+}
+
+.story-stop:last-child::after {
+  display: none;
+}
+
+.story-stop.is-next::before {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: var(--glow-sm);
+}
+
+.story-card {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  height: 100%;
+  padding: 12px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color var(--transition-normal), transform var(--transition-normal);
+}
+
+a.story-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.story-card--next {
+  border-color: rgba(69, 229, 44, 0.45);
+  background:
+    radial-gradient(130% 150% at 0% 0%, rgba(69, 229, 44, 0.16), transparent 62%),
+    var(--color-bg-surface-light);
+}
+
+.story-cover {
+  flex-shrink: 0;
+  width: 84px;
+  height: 84px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+}
+
+.story-cover--empty,
+.story-cover--next {
+  display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 2rem 3.5rem;
-  text-align: center;
+  background: var(--color-bg-surface-light);
+  color: var(--color-text-muted);
 }
 
-.stat-band-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 110px;
-}
-
-.stat-band-value {
-  font-size: clamp(2rem, 5vw, 3rem);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -1px;
+.story-cover--next {
+  background: rgba(69, 229, 44, 0.12);
   color: var(--color-primary);
 }
 
-.stat-band-label {
-  font-size: 0.78rem;
-  font-weight: 600;
+.story-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.story-when {
+  font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
+  color: var(--color-primary);
+}
+
+.story-title {
+  font-size: 1.05rem;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.story-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
   color: var(--color-text-muted);
+}
+
+.story-meta svg {
+  color: var(--color-primary);
+}
+
+.story-meta--next {
+  color: var(--color-text-main);
+  font-weight: 600;
+}
+
+.story-next-link,
+.story-more a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.story-next-link:hover,
+.story-more a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.story-more {
+  margin: 32px 0 0;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .story-timeline {
+    --rail-gap: 24px;
+    grid-template-columns: repeat(var(--stops, 3), minmax(0, 1fr));
+  }
+
+  .story-stop {
+    padding-left: 0;
+    padding-top: 34px;
+  }
+
+  .story-stop::before {
+    top: 0;
+    left: 50%;
+    margin-top: 0;
+    margin-left: calc(var(--dot) / -2);
+  }
+
+  .story-stop::after {
+    top: calc(var(--dot) / 2 - 1px);
+    left: calc(50% + var(--dot) / 2);
+    width: calc(100% + var(--rail-gap) - var(--dot));
+    height: 2px;
+  }
+
+  .story-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .story-cover {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    border-radius: 0;
+  }
+
+  .story-card-body {
+    padding: 4px 18px 20px;
+  }
+
+  .story-title {
+    font-size: 1.15rem;
+  }
 }
 
 /* ========================================
@@ -946,6 +1137,14 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .cat-card-status.is-closed {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--color-border-light);
+  color: var(--color-text-muted);
+}
+
+/* Ten or fewer places left. Orange used to mean "closed"; that moved to grey
+   so orange can mean "hurry" without a sold-out card looking urgent. */
+.cat-card-status.is-low {
   background: rgba(255, 107, 0, 0.12);
   border: 1px solid rgba(255, 107, 0, 0.35);
   color: var(--color-accent);
@@ -1011,13 +1210,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   color: var(--color-primary);
   flex-shrink: 0;
   margin-top: 3px;
-}
-
-.cat-card-scarcity {
-  margin: 0 0 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--color-accent);
 }
 
 .cat-card-route {

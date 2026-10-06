@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Camera, Video, Users, MapPin, Calendar, ChevronLeft, ChevronRight, X, ImageOff } from 'lucide-react';
 import { getPastEventMedia } from '../utils/services/media';
 import { getPublishedPastEvents } from '../utils/services/pastEvents';
@@ -119,6 +120,9 @@ function GalleryItem({ item, index, onOpen }) {
 }
 
 export default function PastEvents() {
+  // ?edition=<id> opens that edition first -- the homepage timeline links here.
+  const [searchParams] = useSearchParams();
+  const requestedId = searchParams.get('edition');
   const [events, setEvents] = useState([]);
   const [media, setMedia] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -147,11 +151,12 @@ export default function PastEvents() {
         if (cancelled) return;
 
         const list = rows.length > 0 ? rows : [FALLBACK_EVENT];
+        const initial = list.find(ev => ev.id === requestedId) || list[0];
         setEvents(list);
-        setSelectedId(list[0].id);
+        setSelectedId(initial.id);
 
         if (rows.length > 0) {
-          const m = await getPastEventMedia(list[0].id);
+          const m = await getPastEventMedia(initial.id);
           if (!cancelled) setMedia(m);
         }
       } catch (error) {
@@ -166,7 +171,7 @@ export default function PastEvents() {
     })();
 
     return () => { cancelled = true; };
-  }, []);
+  },[requestedId]);
 
   const handleEditionChange = async (id) => {
     if (id === selectedId) return;

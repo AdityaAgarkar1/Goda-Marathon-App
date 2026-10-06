@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
-import { Calendar, MapPin, Users, Trophy, ShieldCheck, ChevronDown, ChevronUp, Loader, Check, Clock, TrendingUp } from 'lucide-react';
+import { Calendar, MapPin, Mountain, Trophy, ShieldCheck, ChevronDown, ChevronUp, Loader, Check, Clock, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import Seo from '../components/Seo';
@@ -12,10 +12,12 @@ import { FaqAccordion } from '../components/FaqAccordion';
 import { HeroImage } from '../components/HeroImage';
 import { HeroHeadline, DEFAULT_HERO_HEADLINE } from '../components/HeroHeadline';
 import { HeroPartners, SponsorsSection } from '../components/Sponsors';
+import { StorySoFar } from '../components/StorySoFar';
 
 import { getCurrentEvent } from '../utils/services/events';
 import { getEventCategories } from '../utils/services/categories';
 import { getPublishedSponsors } from '../utils/services/sponsors';
+import { getPublishedPastEvents } from '../utils/services/pastEvents';
 import { CURRENT_EVENT } from '../utils/constants';
 import { formatHeroDate, buildCountdownTarget } from '../utils/dates';
 
@@ -48,11 +50,48 @@ function toNumber(value) {
   return Number.isFinite(n) ? n : 0;
 }
 
+/** A category distance in km: "15km" → 15, "300m" → 0.3. Unreadable text is 0. */
+function toKm(value) {
+  const text = String(value ?? '').toLowerCase();
+  const n = toNumber(text);
+  return /\d\s*m\b/.test(text) && !text.includes('km') ? n / 1000 : n;
+}
+
+/** [3, 5, 21] → "3–21 km"; null when no distance could be read. */
+function describeDistanceRange(distancesKm) {
+  if (distancesKm.length === 0) return null;
+  const fmt = (n) => String(Number(n.toFixed(1)));
+  const min = Math.min(...distancesKm);
+  const max = Math.max(...distancesKm);
+  return min === max ? `${fmt(max)} km` : `${fmt(min)}–${fmt(max)} km`;
+}
+
+// At or below this many places, the card's badge turns orange.
+const LOW_SLOTS = 10;
+
+/**
+ * The badge in a category card's header: places left while the category has a
+ * cap and is taking entries, otherwise its status. The count is the
+ * database's own, unrounded: it is the limit registration will enforce, and a
+ * lower figure would be a false claim. To show a smaller number, release
+ * places in waves by lowering the category's max slots.
+ */
+function categoryBadge(status, slotsLeft, registrationOpen) {
+  if (!registrationOpen) return { text: 'Closed', tone: 'is-closed' };
+  if (status !== 'Open') return { text: status, tone: 'is-closed' };
+  if (slotsLeft === null) return { text: 'Open', tone: 'is-open' };
+  return {
+    text: `${slotsLeft} slot${slotsLeft === 1 ? '' : 's'} left`,
+    tone: slotsLeft <= LOW_SLOTS ? 'is-low' : 'is-open',
+  };
+}
+
 export default function Home() {
   const [expandedRoute, setExpandedRoute] = useState(null);
   const [event, setEvent] = useState(null);
   const [categories, setCategories] = useState([]);
   const [sponsors, setSponsors] = useState([]);
+  const [pastEditions, setPastEditions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -61,8 +100,12 @@ export default function Home() {
     (async () => {
       // Requested alongside the event rather than after it, and awaited before
       // the first paint so a featured partner's hero credit does not pop in
-      // and push the page down. Never rejects: a failure is an empty list.
+      // and push the page down. Past editions are held back for the same
+      // reason: the timeline sits above the categories, and arriving late it
+      // would shove them away from a visitor who had already scrolled there.
+      // Neither rejects: a failure is an empty list.
       const sponsorsRequest = getPublishedSponsors();
+      const pastEditionsRequest = getPublishedPastEvents();
 
       try {
         const data = await getCurrentEvent();
@@ -77,9 +120,10 @@ export default function Home() {
         if (!cancelled) setEvent(FALLBACK_EVENT);
       }
 
-      const rows = await sponsorsRequest;
+      const [sponsorRows, editionRows] = await Promise.all([sponsorsRequest, pastEditionsRequest]);
       if (cancelled) return;
-      setSponsors(rows);
+      setSponsors(sponsorRows);
+      setPastEditions(editionRows);
       setIsLoading(false);
     })();
 
@@ -108,24 +152,21 @@ export default function Home() {
   const countdownTarget = buildCountdownTarget(e.date, e.flag_off_time);
   const registrationOpen = e.registration_open !== false;
 
-  // Stats band — derived from the configured categories rather than hardcoded,
-  // so adding a longer route updates the homepage automatically.
-  const maxDistance = categories.reduce((max, c) => Math.max(max, toNumber(c.distance)), 0);
+  // The hero's distances fact, derived from the configured categories rather
+  // than hardcoded, so adding a longer route updates the homepage. This used
+  // to be a separate stats band, which repeated the edition and the number of
+  // distances already shown above it.
+  const routeCount = categories.length > 0
+    ? `${categories.length} route${categories.length === 1 ? '' : 's'}`
+    : null;
+  const distanceRange = describeDistanceRange(
+    categories.map(c => toKm(c.distance)).filter(n => n > 0),
+  );
   const maxElevation = categories.reduce((max, c) => Math.max(max, toNumber(c.elevation)), 0);
-
-  // Built as a list and filtered, so a stat with nothing behind it is omitted
-  // rather than rendered as an em dash. "Longest route" is suppressed while
-  // there is only one category, where it merely repeats that category.
-  const stats = [
-    e.edition && { value: e.edition, label: 'Edition' },
-    categories.length > 0 && {
-      value: String(categories.length),
-      label: categories.length === 1 ? 'Distance' : 'Distances',
-    },
-    categories.length > 1 && maxDistance > 0 && { value: `${maxDistance}km`, label: 'Longest Route' },
-    maxElevation > 0 && { value: `${maxElevation}m`, label: 'Max Elevation' },
-    { value: 'All', label: 'Levels Welcome' },
-  ].filter(Boolean);
+  const distanceDetail = [
+    distanceRange && routeCount,
+    maxElevation > 0 && `up to ${maxElevation}m elevation`,
+  ].filter(Boolean).join(' · ');
 
   return (
     <div>
@@ -165,7 +206,9 @@ export default function Home() {
             ) : (
               <Link to="/event" className="w-full sm:w-auto"><Button variant="primary" style={{ fontSize: '1.125rem', padding: '16px 40px', width: '100%' }}>View Event</Button></Link>
             )}
-            <Link to="/past-events" className="w-full sm:w-auto"><Button variant="outline" style={{ fontSize: '1.125rem', padding: '16px 40px', width: '100%' }}>View Past Events</Button></Link>
+            {/* Past editions are on this page now (the timeline below), so
+                the second slot goes to what most visitors scroll for. */}
+            <Link to="/#categories" className="w-full sm:w-auto"><Button variant="outline" style={{ fontSize: '1.125rem', padding: '16px 40px', width: '100%' }}>Find Your Distance</Button></Link>
           </motion.div>
 
           <HeroPartners sponsors={sponsors} />
@@ -188,32 +231,24 @@ export default function Home() {
             <div className="hidden md:block" style={{ width: '1px', alignSelf: 'stretch', background: 'rgba(255,255,255,0.1)' }}></div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-sm text-primary mb-sm">
-                <Users size={24} /> <span style={{ fontWeight: 600 }}>Categories</span>
+                <Mountain size={24} /> <span style={{ fontWeight: 600 }}>Distances</span>
               </div>
-              <p style={{ fontWeight: 800, fontSize: '1.2rem' }}>
-                {categories.length > 0 ? `${categories.length} Distance${categories.length === 1 ? '' : 's'}` : 'Coming soon'}
+              <p style={{ fontWeight: 800, fontSize: '1.2rem', textTransform: 'uppercase', margin: 0 }}>
+                {distanceRange || routeCount || 'Coming soon'}
               </p>
+              {distanceDetail && (
+                <p className="text-muted" style={{ fontSize: '0.85rem', margin: '4px 0 0' }}>{distanceDetail}</p>
+              )}
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="section" style={{ backgroundColor: '#050505' }}>
-        <motion.div variants={fadeUpVariant} initial="hidden" whileInView="visible" viewport={{ once: true }} className="container">
-          <div className="stat-band">
-            {stats.map(stat => (
-              <div key={stat.label} className="stat-band-item">
-                <span className="stat-band-value">{stat.value}</span>
-                <span className="stat-band-label">{stat.label}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
+      {/* Past editions leading up to this one. Renders nothing until one is published. */}
+      <StorySoFar editions={pastEditions} event={e} registrationOpen={registrationOpen} />
 
       {/* Categories */}
-      <section className="section">
+      <section id="categories" className="section">
         <div className="container">
           <motion.div variants={fadeUpVariant} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center" style={{ marginBottom: '60px' }}>
             <h2 style={{ fontSize: '2.5rem' }}>Upcoming <span className="accent-text">Categories</span></h2>
@@ -234,6 +269,7 @@ export default function Home() {
                 );
                 const status = slotsLeft === 0 ? 'Sold Out' : (cat.status || 'Open');
                 const isAvailable = registrationOpen && status === 'Open';
+                const badge = categoryBadge(status, slotsLeft, registrationOpen);
                 const elevation = cat.elevation && cat.elevation !== '0m' ? cat.elevation : null;
 
                 return (
@@ -247,8 +283,8 @@ export default function Home() {
                   >
                     <header className="cat-card-head">
                       <span className="cat-card-distance">{cat.distance || cat.name}</span>
-                      <span className={`cat-card-status ${status === 'Open' ? 'is-open' : 'is-closed'}`}>
-                        {status}
+                      <span className={`cat-card-status ${badge.tone}`}>
+                        {badge.text}
                       </span>
                     </header>
 
@@ -270,12 +306,6 @@ export default function Home() {
                             <li key={pi}><Check size={15} /> <span>{perk}</span></li>
                           ))}
                         </ul>
-                      )}
-
-                      {slotsLeft !== null && slotsLeft > 0 && slotsLeft <= 10 && (
-                        <p className="cat-card-scarcity">
-                          Only {slotsLeft} slot{slotsLeft === 1 ? '' : 's'} left
-                        </p>
                       )}
 
                       {cat.elevation_image && (
