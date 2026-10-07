@@ -30,7 +30,7 @@
 .legal-body {
   font-size: 1rem;
   line-height: 1.75;
-  color: #D9D9D9;
+  color: var(--color-text-soft);
 }
 
 .legal-body h2 {
@@ -64,7 +64,7 @@
 }
 
 .legal-body a {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -75,7 +75,7 @@
 
 .legal-callout {
   border-left: 3px solid var(--color-accent);
-  background: rgba(255, 107, 0, 0.07);
+  background: rgba(var(--color-primary-rgb), 0.07);
   padding: 16px 20px;
   border-radius: 0 8px 8px 0;
   margin: 24px 0;
@@ -105,7 +105,7 @@
 }
 
 .legal-contact-list svg {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   flex-shrink: 0;
   margin-top: 4px;
 }
@@ -120,7 +120,7 @@
 }
 
 .legal-toc {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--color-fg-rgb), 0.03);
   border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 20px 24px;

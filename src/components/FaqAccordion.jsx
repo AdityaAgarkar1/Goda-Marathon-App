@@ -25,7 +25,7 @@ export function FaqAccordion() {
     <section
       id="faq"
       className="section"
-      style={{ backgroundColor: '#050505', borderTop: '1px solid var(--color-border)' }}
+      style={{ backgroundColor: 'var(--color-bg-alt)', borderTop: '1px solid var(--color-border)' }}
     >
       <div className="container">
         <h2 className="text-center" style={{ fontSize: '2.5rem', marginBottom: '60px' }}>

@@ -74,7 +74,7 @@ export function CountdownTimer({ targetDate }) {
         <div
           key={unit}
           className="flex flex-col items-center glass"
-          style={{ padding: '10px', borderRadius: '12px', minWidth: '70px', border: '1px solid rgba(57, 255, 20, 0.2)' }}
+          style={{ padding: '10px', borderRadius: '12px', minWidth: '70px', border: '1px solid rgba(var(--color-primary-rgb), 0.2)' }}
         >
           <motion.span
             key={value}
@@ -82,7 +82,7 @@ export function CountdownTimer({ targetDate }) {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.2 }}
             className="text-primary"
-            style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'monospace' }}
+            style={{ fontSize: '1.9rem', fontWeight: 800, lineHeight: 1.1, fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}
           >
             {String(value).padStart(2, '0')}
           </motion.span>

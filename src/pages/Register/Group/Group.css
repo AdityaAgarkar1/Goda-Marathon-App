@@ -16,10 +16,10 @@
   border: 1px solid var(--color-border);
   border-left: 3px solid var(--color-primary);
   border-radius: var(--radius-md);
-  background: rgba(69, 229, 44, 0.05);
+  background: rgba(var(--color-primary-rgb), 0.05);
 }
 
-.grp-intro svg { color: var(--color-primary); flex-shrink: 0; margin-top: 2px; }
+.grp-intro svg { color: var(--color-primary-text); flex-shrink: 0; margin-top: 2px; }
 .grp-intro strong { display: block; margin-bottom: 5px; font-size: 0.92rem; }
 
 .grp-intro p {
@@ -30,7 +30,7 @@
 }
 
 .grp-intro-alt { margin-top: 0.5rem !important; }
-.grp-intro-alt a { color: var(--color-primary); font-weight: 600; }
+.grp-intro-alt a { color: var(--color-primary-text); font-weight: 600; }
 
 .grp-note-compact { margin-top: 1rem; }
 .grp-field-wide { margin-top: 1.25rem; }
@@ -57,7 +57,7 @@
 .grp-row {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--color-fg-rgb), 0.02);
   padding: 0.9rem 1rem 1rem;
 }
 
@@ -113,7 +113,7 @@
 .grp-row-price {
   font-size: 0.85rem;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   margin-right: 0.2rem;
 }
 
@@ -166,7 +166,7 @@
   cursor: pointer;
 }
 
-.grp-extras-toggle:hover { color: var(--color-primary); }
+.grp-extras-toggle:hover { color: var(--color-primary-text); }
 .grp-extras-toggle svg { transition: transform var(--transition-fast); }
 .grp-extras-toggle.is-open svg { transform: rotate(180deg); }
 
@@ -200,7 +200,7 @@
   border: 1px dashed var(--color-border-light);
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 700;
@@ -210,7 +210,7 @@
 
 .grp-add-btn:hover:not(:disabled) {
   border-color: var(--color-primary);
-  background: rgba(69, 229, 44, 0.06);
+  background: rgba(var(--color-primary-rgb), 0.06);
 }
 
 .grp-add-btn:disabled {
@@ -233,7 +233,7 @@
   padding: 1.1rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: rgba(26, 26, 26, 0.75);
+  background: var(--glass-bg);
 }
 
 .grp-tally-title {
@@ -241,7 +241,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   margin: 0 0 0.85rem;
 }
 
@@ -305,7 +305,7 @@
 .grp-tally-total strong {
   font-size: 1.25rem;
   font-weight: 800;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 /* ── Review table ───────────────────────────────────────────────────────── */
@@ -344,7 +344,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--color-text-muted);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--color-fg-rgb), 0.03);
   border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
 }
@@ -383,7 +383,7 @@
   padding: 0.85rem 1rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--color-fg-rgb), 0.02);
   transition: border-color var(--transition-fast);
 }
 
@@ -391,7 +391,7 @@
 .grp-coupon.is-rejected { border-color: var(--color-accent); }
 
 .grp-coupon-icon { color: var(--color-text-muted); flex-shrink: 0; }
-.grp-coupon.is-applied .grp-coupon-icon { color: var(--color-primary); }
+.grp-coupon.is-applied .grp-coupon-icon { color: var(--color-primary-text); }
 
 .grp-coupon-input input { text-transform: uppercase; letter-spacing: 0.05em; }
 
@@ -407,7 +407,7 @@
 }
 
 .grp-coupon-busy { color: var(--color-text-muted); }
-.grp-coupon-ok { color: var(--color-primary); font-weight: 600; }
+.grp-coupon-ok { color: var(--color-primary-text); font-weight: 600; }
 .grp-coupon-bad { color: var(--color-accent); }
 
 .grp-coupon-busy svg,
@@ -416,7 +416,7 @@
 
 .grp-coupon-hint { margin-top: 0.5rem; }
 
-.grp-summary-discount dd { color: var(--color-primary); font-weight: 700; }
+.grp-summary-discount dd { color: var(--color-primary-text); font-weight: 700; }
 
 .grp-per-person {
   margin: 0.6rem 0 0;
@@ -432,7 +432,7 @@
   margin: 1rem 0 0;
   padding: 0.7rem 0.85rem;
   border-radius: var(--radius-sm);
-  background: rgba(255, 107, 0, 0.1);
+  background: rgba(var(--color-primary-rgb), 0.1);
   color: var(--color-accent);
   font-size: 0.8rem;
   line-height: 1.55;
@@ -471,7 +471,7 @@
   transition: border-color var(--transition-fast), color var(--transition-fast);
 }
 
-.grp-csv-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.grp-csv-btn:hover { border-color: var(--color-primary); color: var(--color-primary-text); }
 
 /* ── Narrow screens ─────────────────────────────────────────────────────── */
 @media (max-width: 900px) {

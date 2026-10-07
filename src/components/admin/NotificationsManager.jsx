@@ -186,7 +186,7 @@ export default function NotificationsManager({ eventUuid, eventSlug }) {
                 </div>
               )}
             </div>
-            <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--color-primary)', fontWeight: 600 }}>
+            <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--color-primary-text)', fontWeight: 600 }}>
               {getRecipientCount()} recipient(s) will receive this email
             </div>
           </div>

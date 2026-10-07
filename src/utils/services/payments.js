@@ -143,7 +143,7 @@ export const payForEntry = async ({ registrationId, groupId, prefill = {}, dueAt
         email: prefill.email || undefined,
         contact: prefill.contact || undefined,
       },
-      theme: { color: '#45E52C' },
+      theme: { color: '#F26B0C' }, // brand orange; Razorpay's own dialog, outside our light/dark theming
       ...(secondsLeft !== null ? { timeout: secondsLeft } : {}),
       // Let the runner try another card or UPI app inside the same window
       // rather than dumping them back on our page after one decline.

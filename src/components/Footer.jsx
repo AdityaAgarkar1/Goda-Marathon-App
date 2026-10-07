@@ -33,7 +33,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="footer">
+    <footer className="footer" data-theme="dark">
       <div className="container">
         <div className="footer-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
           <div>
@@ -120,7 +120,7 @@ export default function Footer() {
                   width: 'auto',
                   flex: '0 0 auto',
                   whiteSpace: 'nowrap',
-                  backgroundColor: state === 'done' ? '#10b981' : 'var(--color-primary)',
+                  backgroundColor: state === 'done' ? 'var(--color-success)' : 'var(--color-primary)',
                 }}
                 disabled={state === 'sending' || state === 'done'}
               >

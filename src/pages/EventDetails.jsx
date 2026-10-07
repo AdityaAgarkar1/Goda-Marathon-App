@@ -85,7 +85,7 @@ export default function EventDetails() {
   if (isLoading) {
     return (
       <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Loader size={32} className="spin" style={{ color: 'var(--color-primary)' }} />
+        <Loader size={32} className="spin" style={{ color: 'var(--color-primary-text)' }} />
       </div>
     );
   }
@@ -120,7 +120,7 @@ export default function EventDetails() {
       {/* Hero.
           `hero--compact` carries the height and the overlay. On phones the
           box is taller than it is wide, so the photo is drawn at ~200vw. */}
-      <div className="hero hero--compact">
+      <div className="hero hero--compact" data-theme="dark">
         <HeroImage src={e.hero_image} className="hero-bg" sizes="(max-width: 767px) 200vw, 100vw" />
         <div className="hero-overlay"></div>
         <div className="container hero-content">
@@ -183,7 +183,7 @@ export default function EventDetails() {
 
             {/* Route Map Placeholder */}
             <h3 style={{ marginBottom: '24px' }}>Course Map</h3>
-            <div style={{ width: '100%', height: '400px', backgroundColor: '#222', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: '#666', border: '1px dashed #444', marginBottom: '40px' }}>
+            <div style={{ width: '100%', height: '400px', backgroundColor: 'var(--color-bg-surface-light)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'var(--color-text-muted)', border: '1px dashed var(--color-border-light)', marginBottom: '40px' }}>
               <MapPin size={48} style={{ marginBottom: '16px' }} />
               <p>Interactive Route Map (Coming Soon)</p>
             </div>

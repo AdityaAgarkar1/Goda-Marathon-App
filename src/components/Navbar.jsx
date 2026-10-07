@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Lock, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCurrentEvent } from '../utils/services/events';
+import { ThemeToggle } from './ThemeToggle';
 import './Navbar.css';
 
 const NAV_ITEMS = [
@@ -132,6 +133,7 @@ export default function Navbar() {
             ) : (
               <Link to="/event" className="nav-cta nav-cta--muted">View Event</Link>
             )}
+            <ThemeToggle className="nav-theme-toggle" />
             <Link to="/admin" className="nav-icon-btn" aria-label="Admin dashboard" title="Admin dashboard">
               <Lock size={16} />
             </Link>
@@ -162,7 +164,7 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: '-100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-[1001] bg-[#0b0b0b]/95 backdrop-blur-xl flex flex-col pt-6 px-6"
+            className="mobile-menu fixed inset-0 z-[1001] backdrop-blur-xl flex flex-col pt-6 px-6"
             style={{ minHeight: '100dvh' }}
           >
             <div className="flex justify-between items-center mb-12">
@@ -187,7 +189,7 @@ export default function Navbar() {
                 <Link
                   key={item.to}
                   to={item.to}
-                  className={`pb-2 border-b border-white/10 ${location.pathname === item.to ? 'text-primary' : 'text-white'}`}
+                  className={`mobile-menu-link ${location.pathname === item.to ? 'is-active' : ''}`}
                   aria-current={location.pathname === item.to ? 'page' : undefined}
                 >
                   {item.label}
@@ -195,13 +197,18 @@ export default function Navbar() {
               ))}
             </nav>
 
+            <div className="mobile-menu-theme">
+              <span>Dark mode</span>
+              <ThemeToggle />
+            </div>
+
             <div className="mt-auto mb-12 flex flex-col gap-4">
               {registrationOpen ? (
                 <Link to="/register" className="btn btn-primary w-full py-4 text-xl">Register Now</Link>
               ) : (
                 <Link to="/event" className="btn btn-outline w-full py-4 text-xl">View Event</Link>
               )}
-              <Link to="/admin" className="flex items-center justify-center gap-2 text-gray-400 py-4 w-full">
+              <Link to="/admin" className="mobile-menu-admin flex items-center justify-center gap-2 py-4 w-full">
                 <Lock size={18} /> <span>Admin Dashboard</span>
               </Link>
             </div>

@@ -10,6 +10,7 @@ import { CountdownTimer } from '../components/CountdownTimer';
 import { TestimonialCarousel } from '../components/TestimonialCarousel';
 import { FaqAccordion } from '../components/FaqAccordion';
 import { HeroImage } from '../components/HeroImage';
+import { HeroVideo } from '../components/HeroVideo';
 import { HeroHeadline, DEFAULT_HERO_HEADLINE } from '../components/HeroHeadline';
 import { HeroPartners, SponsorsSection } from '../components/Sponsors';
 import { StorySoFar } from '../components/StorySoFar';
@@ -151,7 +152,7 @@ export default function Home() {
   if (isLoading) {
     return (
       <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Loader size={32} className="spin" style={{ color: 'var(--color-primary)' }} />
+        <Loader size={32} className="spin" style={{ color: 'var(--color-primary-text)' }} />
         <span className="sr-only">Loading event details…</span>
       </div>
     );
@@ -199,10 +200,12 @@ export default function Home() {
       <EventStructuredData event={e} categories={categories} />
 
       {/* Hero Section */}
-      <section className="hero hero--home">
+      <section className="hero hero--home" data-theme="dark">
         {/* Drawn at ~130vw on phones: the photo band there is shallower than
             the screen is wide, and cover scales the photo to its height. */}
         <HeroImage src={e.hero_image} className="hero-bg" sizes="(max-width: 767px) 130vw, 100vw" />
+        {/* Over the photo, which stays as its poster and fallback. */}
+        <HeroVideo src={e.hero_video} className="hero-bg" />
         <div className="hero-overlay"></div>
         <div className="container hero-content text-center" style={{ margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <motion.span initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="badge badge-primary hero-badge">
@@ -240,14 +243,14 @@ export default function Home() {
               <p style={{ fontWeight: 800, fontSize: '1.2rem', margin: 0 }}>{formatHeroDate(e.date) || 'To be announced'}</p>
               {countdownTarget && <CountdownTimer targetDate={countdownTarget} />}
             </div>
-            <div className="hidden md:block" style={{ width: '1px', alignSelf: 'stretch', background: 'rgba(255,255,255,0.1)' }}></div>
+            <div className="hidden md:block" style={{ width: '1px', alignSelf: 'stretch', background: 'rgba(var(--color-fg-rgb), 0.1)' }}></div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-sm text-primary mb-sm">
                 <MapPin size={24} /> <span style={{ fontWeight: 600 }}>Location</span>
               </div>
               <p style={{ fontWeight: 800, fontSize: '1.2rem', textTransform: 'uppercase' }}>{e.location || 'To be announced'}</p>
             </div>
-            <div className="hidden md:block" style={{ width: '1px', alignSelf: 'stretch', background: 'rgba(255,255,255,0.1)' }}></div>
+            <div className="hidden md:block" style={{ width: '1px', alignSelf: 'stretch', background: 'rgba(var(--color-fg-rgb), 0.1)' }}></div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-sm text-primary mb-sm">
                 <Mountain size={24} /> <span style={{ fontWeight: 600 }}>Distances</span>
@@ -270,7 +273,7 @@ export default function Home() {
       <Highlights items={blocks.usp} />
 
       {/* Categories */}
-      <section id="categories" className="section">
+      <section id="categories" className="section section--alt">
         <div className="container">
           <motion.div variants={fadeUpVariant} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center" style={{ marginBottom: '60px' }}>
             <h2 style={{ fontSize: '2.5rem' }}>Upcoming <span className="accent-text">Categories</span></h2>

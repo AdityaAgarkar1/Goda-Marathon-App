@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import ErrorBoundary from './components/ErrorBoundary';
+import ThemeProvider from './components/ThemeProvider';
 
 import Home from './pages/Home';
 import EventDetails from './pages/EventDetails';
@@ -38,7 +39,7 @@ const Contact = lazy(() => import('./pages/legal/Contact'));
 function RouteFallback() {
   return (
     <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <Loader size={32} className="spin" style={{ color: 'var(--color-primary)' }} aria-hidden="true" />
+      <Loader size={32} className="spin" style={{ color: 'var(--color-primary-text)' }} aria-hidden="true" />
       <span className="sr-only">Loading…</span>
     </div>
   );
@@ -47,40 +48,42 @@ function RouteFallback() {
 export default function App() {
   return (
     <Router>
-      <ScrollToTop />
+      <ThemeProvider>
+        <ScrollToTop />
 
-      {/* Lets a keyboard or screen-reader user jump past the navigation
-          instead of tabbing through every link on every page. */}
-      <a href="#main-content" className="skip-link">Skip to main content</a>
+        {/* Lets a keyboard or screen-reader user jump past the navigation
+            instead of tabbing through every link on every page. */}
+        <a href="#main-content" className="skip-link">Skip to main content</a>
 
-      <Navbar />
+        <Navbar />
 
-      <main className="main-content" id="main-content">
-        {/* Inside <main> so a crash keeps the header and footer, and with them
-            a way to navigate somewhere that works. */}
-        <ErrorBoundary>
-          <Suspense fallback={<RouteFallback />}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/event" element={<EventDetails />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/register/group" element={<GroupRegister />} />
-              <Route path="/past-events" element={<PastEvents />} />
-              <Route path="/results" element={<Results />} />
-              <Route path="/admin" element={<Admin />} />
+        <main className="main-content" id="main-content">
+          {/* Inside <main> so a crash keeps the header and footer, and with them
+              a way to navigate somewhere that works. */}
+          <ErrorBoundary>
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/event" element={<EventDetails />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/register/group" element={<GroupRegister />} />
+                <Route path="/past-events" element={<PastEvents />} />
+                <Route path="/results" element={<Results />} />
+                <Route path="/admin" element={<Admin />} />
 
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/refund-policy" element={<RefundPolicy />} />
-              <Route path="/contact" element={<Contact />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/refund-policy" element={<RefundPolicy />} />
+                <Route path="/contact" element={<Contact />} />
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </ErrorBoundary>
-      </main>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
+        </main>
 
-      <Footer />
+        <Footer />
+      </ThemeProvider>
     </Router>
   );
 }

@@ -15,7 +15,7 @@ export function Highlights({ items }) {
     <section
       className="section"
       aria-labelledby="highlights-heading"
-      style={{ backgroundColor: '#0A0A0A', borderTop: '1px solid var(--color-border)' }}
+      style={{ borderTop: '1px solid var(--color-border)' }}
     >
       <div className="container">
         <motion.div

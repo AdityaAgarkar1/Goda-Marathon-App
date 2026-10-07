@@ -68,7 +68,7 @@ export default function StepRace({
         )}
 
         {categories.length === 0 ? (
-          <p className="text-gray-400">Categories will be announced soon.</p>
+          <p className="text-muted">Categories will be announced soon.</p>
         ) : (
           <div className="reg-category-list">
             {categories.map((cat) => {

@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Save, RefreshCw, CheckCircle, Eye } from 'lucide-react';
 import { getCurrentEvent, updateEvent } from '../../utils/services/events';
 import { getEventCategories } from '../../utils/services/categories';
-import { uploadHeroVariants, deleteStoredImageAt } from '../../utils/services/storage';
+import { uploadHeroVariants, uploadMedia, deleteStoredImageAt } from '../../utils/services/storage';
+import { getSiteSettings, updateSiteSettings } from '../../utils/services/siteSettings';
+import { SITE_THEME_OPTIONS } from '../../utils/theme';
+import { useTheme } from '../../utils/themeContext';
 import { describeSaveError } from '../../utils/services/errors';
 import { formatHeroDate, buildCountdownTarget } from '../../utils/dates';
 import { DEFAULT_HERO_HEADLINE } from '../HeroHeadline';
 import HeroImageField from './HeroImageField';
 import HeroPreview from './HeroPreview';
+import HeroVideoField from './HeroVideoField';
 import EmailPreviewModal from './EmailPreviewModal';
 import EventFeaturesField from './EventFeaturesField';
 import { cleanEventFeatures } from '../../utils/eventFeatures';
@@ -22,8 +26,26 @@ export default function EventSettings() {
   const [pendingHero, setPendingHero] = useState(null);
   const [categoryCount, setCategoryCount] = useState(0);
   const [showEmailPreview, setShowEmailPreview] = useState(false);
+  // The hero video the row holds now, and a chosen file waiting for Save.
+  const [savedVideo, setSavedVideo] = useState(null);
+  const [pendingVideo, setPendingVideo] = useState(null);
+  // Site-wide default theme (site_settings, migration 0018). Null until
+  // loaded, and stays null before the migration runs, which hides the field.
+  const [siteTheme, setSiteTheme] = useState(null);
+  const [savedSiteTheme, setSavedSiteTheme] = useState(null);
+  const { setSiteDefault } = useTheme();
 
   useEffect(() => { loadEvent(); }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    getSiteSettings().then(row => {
+      if (cancelled || !row) return;
+      setSiteTheme(row.default_theme);
+      setSavedSiteTheme(row.default_theme);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   // Free the preview's in-memory copy once it is replaced, discarded or saved.
   useEffect(() => () => {
@@ -35,6 +57,7 @@ export default function EventSettings() {
     const data = await getCurrentEvent();
     setEventData(data);
     setSavedHero(data?.hero_image ?? null);
+    setSavedVideo(data?.hero_video ?? null);
     setIsLoading(false);
     if (data?.id) {
       const categories = await getEventCategories(data.id, data.id);
@@ -65,6 +88,18 @@ export default function EventSettings() {
   // Likewise the email settings, which arrive with migration 0014.
   const hasEmailSettings = !!eventData && 'confirmation_emails_enabled' in eventData;
   const hasFeatures = !!eventData && 'features' in eventData;
+  // And the hero video, which arrives with migration 0018.
+  const hasHeroVideo = !!eventData && 'hero_video' in eventData;
+
+  const setHeroVideo = (url) => {
+    setEventData(prev => ({ ...prev, hero_video: url }));
+    setSaveMsg('');
+  };
+
+  const setPendingHeroVideo = (file) => {
+    setPendingVideo(file);
+    setSaveMsg('');
+  };
 
   const setFeatures = (features) => {
     setEventData(prev => ({ ...prev, features }));
@@ -78,11 +113,18 @@ export default function EventSettings() {
     setIsSaving(true);
     setSaveMsg('');
     let uploadedHero = null;
+    let uploadedVideo = null;
+    let rowSaved = false;
     try {
       let heroImage = eventData.hero_image;
       if (pendingHero) {
         uploadedHero = await uploadHeroVariants(pendingHero.resized, pendingHero.fileName);
         heroImage = uploadedHero;
+      }
+      let heroVideo = hasHeroVideo ? (eventData.hero_video || null) : null;
+      if (hasHeroVideo && pendingVideo) {
+        uploadedVideo = (await uploadMedia(pendingVideo, 'hero/video')).publicUrl;
+        heroVideo = uploadedVideo;
       }
 
       const hold = parseInt(eventData.payment_hold_minutes, 10);
@@ -98,6 +140,7 @@ export default function EventSettings() {
           confirmation_email_note: eventData.confirmation_email_note?.trim() || null,
         } : {}),
         ...(hasFeatures ? { features: cleanedFeatures.features } : {}),
+        ...(hasHeroVideo ? { hero_video: heroVideo } : {}),
         name: eventData.name,
         date: eventData.date,
         location: eventData.location,
@@ -115,19 +158,39 @@ export default function EventSettings() {
         contact_phone: eventData.contact_phone || null,
       });
 
+      rowSaved = true;
+
       // The row no longer points at the old photo; remove it if we host it.
       if (savedHero && savedHero !== heroImage) deleteStoredImageAt(savedHero);
       setSavedHero(heroImage);
+      if (hasHeroVideo) {
+        if (savedVideo && savedVideo !== heroVideo) deleteStoredImageAt(savedVideo);
+        setSavedVideo(heroVideo);
+        setPendingVideo(null);
+      }
       setEventData(prev => ({
         ...prev,
         hero_image: heroImage,
+        ...(hasHeroVideo ? { hero_video: heroVideo } : {}),
         ...(hasFeatures ? { features: cleanedFeatures.features } : {}),
       }));
       setPendingHero(null);
+
+      // Saved separately: it lives in site_settings, not on the event row.
+      if (siteTheme && siteTheme !== savedSiteTheme) {
+        await updateSiteSettings({ default_theme: siteTheme });
+        setSavedSiteTheme(siteTheme);
+        setSiteDefault(siteTheme);
+      }
       setSaveMsg('Event settings saved successfully!');
     } catch (err) {
-      // The row still points at the old photo, so the new files are orphans.
-      if (uploadedHero) deleteStoredImageAt(uploadedHero);
+      // If the event row did not save, it still points at the old files, so
+      // the new uploads are orphans. If it did (and only the theme failed),
+      // they are in use and must stay.
+      if (!rowSaved) {
+        if (uploadedHero) deleteStoredImageAt(uploadedHero);
+        if (uploadedVideo) deleteStoredImageAt(uploadedVideo);
+      }
       setSaveMsg(describeSaveError(err, 'event settings'));
     } finally {
       setIsSaving(false);
@@ -148,7 +211,9 @@ export default function EventSettings() {
         <button className="btn btn-primary admin-action-btn" onClick={handleSave} disabled={isSaving} style={{ gap: '6px' }}>
           {isSaving ? <RefreshCw size={18} className="spin" /> : <Save size={18} />}
           <span className="admin-action-label">
-            {isSaving ? (pendingHero ? 'Uploading photo...' : 'Saving...') : 'Save Changes'}
+            {isSaving
+              ? (pendingVideo ? 'Uploading video...' : pendingHero ? 'Uploading photo...' : 'Saving...')
+              : 'Save Changes'}
           </span>
         </button>
       </div>
@@ -204,6 +269,15 @@ export default function EventSettings() {
           onChange={setHeroImage}
           disabled={isSaving}
         />
+        {hasHeroVideo && (
+          <HeroVideoField
+            value={eventData.hero_video}
+            pending={pendingVideo}
+            onPending={setPendingHeroVideo}
+            onChange={setHeroVideo}
+            disabled={isSaving}
+          />
+        )}
         <div className="admin-media-form-group" style={{ marginTop: '0.75rem' }}>
           <label htmlFor="evt-hero-headline">Hero Headline</label>
           <input id="evt-hero-headline" name="hero_headline" value={eventData.hero_headline || ''} onChange={handleInput} placeholder="RUN BEYOND LIMITS" />
@@ -233,6 +307,28 @@ export default function EventSettings() {
             differ slightly; check the homepage after saving.
           </span>
         </div>
+
+        {/* Appearance */}
+        {siteTheme && (
+          <>
+            <h4 className="admin-form-section-title" style={{ marginTop: '1.5rem' }}>Appearance</h4>
+            <div className="admin-media-form-group" style={{ maxWidth: '360px' }}>
+              <label htmlFor="evt-default-theme">Default theme</label>
+              <select
+                id="evt-default-theme"
+                value={siteTheme}
+                onChange={(e) => { setSiteTheme(e.target.value); setSaveMsg(''); }}
+              >
+                {SITE_THEME_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              <span className="admin-field-hint">
+                What a visitor sees on their first visit. Anyone who flips the light/dark switch in
+                the header keeps their own choice. Applies to the whole site, not just this edition.
+                The admin panel itself is always dark.
+              </span>
+            </div>
+          </>
+        )}
 
         {/* Registration Config */}
         <h4 className="admin-form-section-title" style={{ marginTop: '1.5rem' }}>Registration Configuration</h4>

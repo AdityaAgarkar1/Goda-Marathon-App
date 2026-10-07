@@ -22,10 +22,10 @@
 }
 
 .navbar.is-scrolled {
-  background-color: rgba(11, 11, 11, 0.72);
+  background-color: rgba(var(--color-bg-rgb), 0.72);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border-bottom-color: rgba(255, 255, 255, 0.08);
+  border-bottom-color: rgba(var(--color-fg-rgb), 0.08);
 }
 
 .nav-container {
@@ -54,23 +54,24 @@
   border-radius: 50%;
   object-fit: cover;
   background: #fff;
-  border: 2px solid rgba(69, 229, 44, 0.28);
+  border: 2px solid rgba(var(--color-primary-rgb), 0.28);
   transition: border-color var(--transition-fast), transform var(--transition-fast);
 }
 
 .brand:hover .brand-mark {
-  border-color: rgba(69, 229, 44, 0.6);
+  border-color: rgba(var(--color-primary-rgb), 0.6);
   transform: scale(1.05);
 }
 
 .brand-word {
-  font-size: 1.28rem;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: 0.02em;
   line-height: 1;
 }
 
-.brand-dot { color: var(--color-primary); }
+.brand-dot { color: var(--color-primary-text); }
 
 /* ── Links ────────────────────────────────────────────────────────────── */
 .nav-links {
@@ -100,14 +101,14 @@
 
 .nav-link:hover {
   color: var(--color-text-main);
-  background-color: rgba(255, 255, 255, 0.06);
+  background-color: rgba(var(--color-fg-rgb), 0.06);
 }
 
 /* The current page reads as a filled pill rather than a coloured word, and
    carries aria-current for anyone not relying on the visual. */
 .nav-link.active {
-  color: var(--color-primary);
-  background-color: rgba(69, 229, 44, 0.12);
+  color: var(--color-primary-text);
+  background-color: rgba(var(--color-primary-rgb), 0.12);
 }
 
 /* ── Actions ──────────────────────────────────────────────────────────── */
@@ -128,7 +129,7 @@
   padding: 0 20px;
   border-radius: var(--radius-full);
   background-color: var(--color-primary);
-  color: #000;
+  color: var(--color-on-primary);
   font-size: 0.88rem;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -145,12 +146,12 @@
 .nav-cta--muted {
   background-color: transparent;
   color: var(--color-text-main);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(var(--color-fg-rgb), 0.25);
 }
 
 .nav-cta--muted:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.4);
+  background-color: rgba(var(--color-fg-rgb), 0.08);
+  border-color: rgba(var(--color-fg-rgb), 0.4);
 }
 
 .nav-icon-btn {
@@ -160,7 +161,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--color-fg-rgb), 0.12);
   color: var(--color-text-muted);
   text-decoration: none;
   transition: color var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
@@ -171,9 +172,9 @@
 }
 
 .nav-icon-btn:hover {
-  color: var(--color-primary);
-  border-color: rgba(69, 229, 44, 0.4);
-  background-color: rgba(69, 229, 44, 0.08);
+  color: var(--color-primary-text);
+  border-color: rgba(var(--color-primary-rgb), 0.4);
+  background-color: rgba(var(--color-primary-rgb), 0.08);
 }
 
 /* ── Mobile trigger ───────────────────────────────────────────────────── */
@@ -184,7 +185,7 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--color-fg-rgb), 0.12);
   background: none;
   color: var(--color-text-main);
   cursor: pointer;
@@ -192,8 +193,8 @@
 }
 
 .mobile-menu-btn:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.25);
+  background-color: rgba(var(--color-fg-rgb), 0.08);
+  border-color: rgba(var(--color-fg-rgb), 0.25);
 }
 
 @media (min-width: 900px) {
@@ -219,13 +220,91 @@
   padding: 8px;
   border: none;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  background: rgba(var(--color-fg-rgb), 0.05);
+  color: var(--color-text-main);
   cursor: pointer;
   transition: color var(--transition-fast), background var(--transition-fast);
 }
 
 .mobile-menu-close:hover {
-  color: var(--color-primary);
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-primary-text);
+  background: rgba(var(--color-fg-rgb), 0.1);
+}
+
+/* ── Theme switch ─────────────────────────────────────────────────────── */
+/* A pill track with a sliding thumb carrying a sun or moon. On narrow phones
+   the header has no room beside the brand and the menu button, so there the
+   switch lives in the mobile menu instead. */
+.theme-toggle {
+  position: relative;
+  flex-shrink: 0;
+  width: 52px;
+  height: 30px;
+  padding: 0;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-surface-light);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.theme-toggle:hover {
+  border-color: var(--color-primary);
+}
+
+.theme-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  transition: transform var(--transition-fast);
+}
+
+.theme-toggle.is-dark .theme-toggle-thumb {
+  transform: translateX(22px);
+  background: var(--color-secondary);
+}
+
+@media (max-width: 419px) {
+  .nav-theme-toggle { display: none; }
+}
+
+/* ── Mobile menu ──────────────────────────────────────────────────────── */
+.mobile-menu {
+  background-color: rgba(var(--color-bg-rgb), 0.97);
+  color: var(--color-text-main);
+}
+
+.mobile-menu-link {
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-main);
+  text-decoration: none;
+}
+
+.mobile-menu-link.is-active {
+  color: var(--color-primary-text);
+}
+
+.mobile-menu-theme {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+
+.mobile-menu-admin {
+  color: var(--color-text-muted);
+  text-decoration: none;
 }

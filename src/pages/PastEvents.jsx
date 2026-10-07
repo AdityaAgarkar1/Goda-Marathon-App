@@ -62,7 +62,7 @@ function Lightbox({ images, currentIndex, onClose, onNext, onPrev }) {
   if (!current) return null;
 
   return (
-    <div className="pe-lightbox" onClick={onClose} role="dialog" aria-modal="true" aria-label="Photo viewer">
+    <div className="pe-lightbox" data-theme="dark" onClick={onClose} role="dialog" aria-modal="true" aria-label="Photo viewer">
       <div className="pe-lightbox-content" onClick={(e) => e.stopPropagation()}>
         <button ref={closeRef} className="pe-lightbox-close" onClick={onClose} aria-label="Close viewer">
           <X size={20} />
@@ -217,7 +217,7 @@ export default function PastEvents() {
         description="Photos and video from previous editions of the GODA Epic Trail Run in the Gangapur Backwaters near Nashik."
         image={heroImage}
       />
-      <div className="pe-hero">
+      <div className="pe-hero" data-theme="dark">
         {heroImage && (
           <HeroImage src={heroImage} className="pe-hero-bg" sizes="(max-width: 767px) 200vw, 100vw" />
         )}

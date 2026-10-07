@@ -20,7 +20,31 @@
     />
     <meta name="robots" content="index, follow" />
     <meta name="author" content="Godavari Expedition" />
-    <meta name="theme-color" content="#0B0B0B" />
+    <meta name="theme-color" content="#FFFFFF" />
+
+    <!--
+      Sets the light or dark theme before the first paint, so the page never
+      flashes the wrong one. Mirrors src/utils/theme.js (which cannot be
+      imported this early): the visitor's own choice wins, then the admin
+      default as last seen, then light. /admin is always dark.
+    -->
+    <script>
+      (function () {
+        var theme = 'light';
+        try {
+          var choice = localStorage.getItem('goda-theme');
+          var siteDefault = localStorage.getItem('goda-theme-default');
+          if (choice === 'light' || choice === 'dark') theme = choice;
+          else if (siteDefault === 'dark') theme = 'dark';
+          else if (siteDefault === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
+        } catch (e) { /* storage blocked: keep light */ }
+        if (location.pathname.indexOf('/admin') === 0) theme = 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        if (theme === 'dark') {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0B1626');
+        }
+      })();
+    </script>
     <link rel="canonical" href="https://godavariexpedition.in/" />
 
     <link rel="icon" type="image/svg+xml" href="/logo-mark.svg" />

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -8,27 +8,10 @@
   /* Layout Constants */
   --navbar-height: 80px;
 
-  /* Colors */
-  --color-primary: #45E52C; /* Neon-ish green, softened from #39FF14 to reduce glare */
-  --color-primary-hover: #3ACB22;
-  --color-accent: #FF6B00; /* Orange */
-  --color-danger: #FF5C5C;
-
-  --color-bg-base: #0B0B0B;
-  --color-bg-surface: #1A1A1A;
-  --color-bg-surface-light: #2A2A2A;
-
-  --color-text-main: #FFFFFF;
-  --color-text-muted: #A8A8A8; /* nudged lighter for contrast on dark surfaces */
-
-  --color-border: #333333;
-  --color-border-light: #444444;
-
-  /* Focus ring — deliberately not the brand green so focus never reads as a state */
-  --color-focus: #8AB4FF;
-
-  /* Typography */
+  /* Typography. Body copy in Inter; headings, distances and numbers in a
+     condensed sports face, which is where the page gets its energy. */
   --font-family: 'Inter', sans-serif;
+  --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
 
   /* Layout */
   --max-width: 1200px;
@@ -43,15 +26,113 @@
   --radius-xl: 20px;
   --radius-full: 9999px;
 
-  /* Elevation / glow — kept subtle to avoid neon "vibration" on pure black */
-  --glow-sm: 0 0 12px rgba(69, 229, 44, 0.22);
-  --glow-md: 0 0 22px rgba(69, 229, 44, 0.32);
-  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.45);
-
   /* Transitions */
   --transition-fast: 0.2s ease;
   --transition-normal: 0.3s ease;
   --transition-bounce: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* ========================================
+   Colour themes
+   "Sunrise": orange leads, the sky blue of the logo supports. Light is the
+   default and dark is deep navy; which one a visitor gets is set by the
+   data-theme attribute on <html> -- before first paint by the script in
+   index.html, then by ThemeProvider.
+
+   The attribute also works on a single element, pinning that part of the page
+   to one theme whatever the visitor chose. The heroes are pinned dark,
+   because their text sits on a photograph.
+
+   Every text pairing here is at least 4.5:1 (WCAG AA) on the backgrounds it
+   is used on, in both themes. *-rgb twins exist for translucent tints:
+   rgba(var(--color-primary-rgb), 0.12).
+   ======================================== */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  --color-primary: #F26B0C;            /* fills: buttons, dots, icons */
+  --color-primary-rgb: 242, 107, 12;
+  --color-primary-hover: #DC5F08;
+  --color-primary-text: #C2410C;       /* orange as text on the page */
+  --color-on-primary: #1A0B00;         /* text on an orange fill */
+  --color-secondary: #0284C7;          /* sky blue, from the logo */
+  --color-secondary-rgb: 2, 132, 199;
+  --color-secondary-text: #0369A1;
+  --color-accent: var(--color-primary-text);  /* the highlighted word in a heading */
+  --color-danger: #C81E1E;
+  --color-success: #15803D;
+  --color-warning: #B45309;
+
+  --color-bg-base: #FFFFFF;
+  --color-bg-rgb: 255, 255, 255;
+  --color-bg-alt: #FFF6EC;             /* alternate section band: warm, like early light */
+  --color-bg-surface: #FFFFFF;
+  --color-bg-surface-light: #F4F7FB;
+
+  --color-text-main: #0B1626;
+  --color-fg-rgb: 11, 22, 38;          /* text colour as rgb, for hairlines and hover tints */
+  --color-text-soft: #334155;          /* body copy that should read stronger than muted */
+  --color-text-muted: #546173;
+
+  --color-border: #E2E8F0;
+  --color-border-light: #CBD5E1;
+
+  /* Focus ring: deliberately neither brand colour, so focus never reads as a state. */
+  --color-focus: #1D4ED8;
+
+  --gradient-brand: linear-gradient(100deg, #C2410C 0%, #F26B0C 100%);
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glow-sm: 0 4px 14px rgba(242, 107, 12, 0.25);
+  --glow-md: 0 6px 22px rgba(242, 107, 12, 0.35);
+  --shadow-card: 0 10px 30px rgba(15, 23, 42, 0.1);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-primary: #FF7A1A;
+  --color-primary-rgb: 255, 122, 26;
+  --color-primary-hover: #FF8F3F;
+  --color-primary-text: #FF9A4D;
+  --color-on-primary: #1A0B00;
+  --color-secondary: #4CC3F5;
+  --color-secondary-rgb: 76, 195, 245;
+  --color-secondary-text: #8AD8FA;
+  --color-accent: var(--color-primary-text);
+  --color-danger: #FF7A7A;
+  --color-success: #4ADE80;
+  --color-warning: #F5C542;
+
+  --color-bg-base: #0B1626;
+  --color-bg-rgb: 11, 22, 38;
+  --color-bg-alt: #081120;
+  --color-bg-surface: #13223A;
+  --color-bg-surface-light: #1C2F4D;
+
+  --color-text-main: #F3F6FB;
+  --color-fg-rgb: 243, 246, 251;
+  --color-text-soft: #D2DAE6;
+  --color-text-muted: #9FB0C6;
+
+  --color-border: #263B5C;
+  --color-border-light: #33496D;
+
+  --color-focus: #A5C8FF;
+
+  /* Dawn: orange into the first yellow of the sun. */
+  --gradient-brand: linear-gradient(100deg, #FF7A1A 0%, #FFC24D 100%);
+  --glass-bg: rgba(19, 34, 58, 0.6);
+  --glow-sm: 0 0 12px rgba(255, 122, 26, 0.25);
+  --glow-md: 0 0 22px rgba(255, 122, 26, 0.35);
+  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+/* An element pinned to a theme sets its own text colour. `color` inherits as
+   a computed value, so without this a dark hero inside a light page would
+   inherit the light theme's navy text. */
+[data-theme] {
+  color: var(--color-text-main);
 }
 
 *, *::before, *::after {
@@ -101,7 +182,7 @@ html {
   z-index: 2000;
   padding: 12px 24px;
   background: var(--color-primary);
-  color: #041400;
+  color: var(--color-on-primary);
   font-weight: 700;
   text-decoration: none;
   border-radius: 0 0 var(--radius-md) var(--radius-md);
@@ -157,6 +238,15 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: var(--spacing-sm);
 }
 
+/* Section and page headings only: at card-heading sizes a condensed face
+   reads cramped, so h3 and below stay in Inter. */
+h1, h2, .font-display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+}
+
 h1 { font-size: clamp(2rem, 8vw, 4.5rem); }
 h2 { font-size: clamp(1.75rem, 6vw, 3.5rem); }
 h3 { font-size: clamp(1.5rem, 4vw, 2.5rem); }
@@ -164,7 +254,7 @@ h4 { font-size: clamp(1.25rem, 3vw, 1.75rem); }
 
 p { margin-bottom: var(--spacing-sm); }
 .text-muted { color: var(--color-text-muted); }
-.text-primary { color: var(--color-primary); }
+.text-primary { color: var(--color-primary-text); }
 .text-accent { color: var(--color-accent); }
 .text-center { text-align: center; }
 
@@ -204,6 +294,12 @@ p { margin-bottom: var(--spacing-sm); }
 .section {
   padding: var(--spacing-xl) 0;
 }
+
+/* Alternate band. The homepage alternates base and alt from the hero down,
+   which separates sections without a rule between every one. */
+.section--alt {
+  background-color: var(--color-bg-alt);
+}
 @media (max-width: 767px) {
   .section { padding: var(--spacing-lg) 0; }
 }
@@ -231,10 +327,10 @@ p { margin-bottom: var(--spacing-sm); }
 
 /* Glassmorphism */
 .glass {
-  background: rgba(26, 26, 26, 0.6);
+  background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--color-fg-rgb), 0.1);
 }
 
 /* Forms */
@@ -242,7 +338,7 @@ input, select, textarea {
   width: 100%;
   padding: 12px 16px;
   min-height: 44px;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(var(--color-fg-rgb), 0.05);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-main);
@@ -260,7 +356,7 @@ input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--color-primary);
   /* pair the colour change with a ring so focus is not communicated by hue alone */
-  box-shadow: 0 0 0 3px rgba(69, 229, 44, 0.18);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.18);
 }
 
 input:focus-visible, select:focus-visible, textarea:focus-visible {
@@ -286,6 +382,20 @@ label {
   padding: var(--spacing-xl) 0;
   min-height: calc(100vh - var(--navbar-height));
   min-height: calc(100dvh - var(--navbar-height));
+
+  /* `position: relative` with `z-index: auto` does NOT create a stacking
+     context, so the negative-z photo and overlay would escape to the root and
+     paint beneath the hero's own background. This keeps them inside it --
+     above its background, below its content. */
+  isolation: isolate;
+}
+
+/* The heroes are pinned to the dark theme (data-theme="dark" in the markup):
+   their text sits on a photograph, and on phones it runs on below the photo,
+   where this navy keeps it readable when the rest of the page is light. */
+.hero[data-theme],
+.pe-hero[data-theme] {
+  background-color: var(--color-bg-base);
 }
 .hero-bg {
   position: absolute;
@@ -310,16 +420,50 @@ label {
      veil over the whole frame was what made the photograph look grey. */
   background:
     radial-gradient(90% 70% at 50% 42%,
-      rgba(11, 11, 11, 0.78) 0%,
-      rgba(11, 11, 11, 0.45) 45%,
-      rgba(11, 11, 11, 0.12) 75%,
+      rgba(var(--color-bg-rgb), 0.78) 0%,
+      rgba(var(--color-bg-rgb), 0.45) 45%,
+      rgba(var(--color-bg-rgb), 0.12) 75%,
       transparent 100%),
     linear-gradient(180deg,
-      rgba(11, 11, 11, 0.7) 0%,
-      rgba(11, 11, 11, 0.2) 22%,
-      rgba(11, 11, 11, 0.55) 68%,
+      rgba(var(--color-bg-rgb), 0.7) 0%,
+      rgba(var(--color-bg-rgb), 0.2) 22%,
+      rgba(var(--color-bg-rgb), 0.55) 68%,
       var(--color-bg-base) 100%);
 }
+/* The optional background loop sits over the photo in the same box (it also
+   carries .hero-bg) and fades in once it is actually playing. */
+.hero-video {
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+.hero-video.is-playing {
+  opacity: 1;
+}
+
+.hero-video-toggle {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--color-fg-rgb), 0.25);
+  background: rgba(var(--color-bg-rgb), 0.6);
+  color: var(--color-text-main);
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.hero-video-toggle:hover {
+  border-color: var(--color-primary);
+}
+
 .hero-content {
   position: relative;
   z-index: 1;
@@ -333,9 +477,10 @@ label {
   padding: 8px 16px;
 }
 .hero--home .hero-title {
-  font-size: clamp(3rem, 8vw, 6rem);
+  font-size: clamp(3.4rem, 10vw, 7rem);
   margin-bottom: 16px;
-  letter-spacing: -2px;
+  letter-spacing: 0.01em;
+  line-height: 0.95;
   text-transform: uppercase;
 }
 .hero--home .hero-subcopy {
@@ -370,13 +515,19 @@ label {
     height: var(--hero-band);
   }
 
+  /* The photo is a band at the top here, so the button sits at its foot. */
+  .hero--home .hero-video-toggle {
+    top: calc(var(--hero-band) - 52px);
+    bottom: auto;
+  }
+
   .hero--home .hero-overlay {
     background: linear-gradient(180deg,
-      rgba(11, 11, 11, 0.25) 0%,
-      rgba(11, 11, 11, 0) 14%,
-      rgba(11, 11, 11, 0.08) 38%,
-      rgba(11, 11, 11, 0.6) 62%,
-      rgba(11, 11, 11, 0.9) 84%,
+      rgba(var(--color-bg-rgb), 0.25) 0%,
+      rgba(var(--color-bg-rgb), 0) 14%,
+      rgba(var(--color-bg-rgb), 0.08) 38%,
+      rgba(var(--color-bg-rgb), 0.6) 62%,
+      rgba(var(--color-bg-rgb), 0.9) 84%,
       var(--color-bg-base) 100%);
   }
 
@@ -387,8 +538,8 @@ label {
     /* It sits on bare photograph here, often on green foliage: keep the
        brand tint but back it with the page colour. */
     background:
-      linear-gradient(rgba(69, 229, 44, 0.12), rgba(69, 229, 44, 0.12)),
-      rgba(11, 11, 11, 0.6);
+      linear-gradient(rgba(var(--color-primary-rgb), 0.12), rgba(var(--color-primary-rgb), 0.12)),
+      rgba(var(--color-bg-rgb), 0.6);
     -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
   }
@@ -398,7 +549,7 @@ label {
   }
 
   /* Gradient text is a transparent fill, so a shadow shows through the
-     glyphs and muddies them. The green is bright enough on the dark foot. */
+     glyphs and muddies them. The orange is bright enough on the dark foot. */
   .hero--home .hero-title .gradient-text {
     text-shadow: none;
   }
@@ -428,12 +579,6 @@ label {
   align-items: flex-end;
   padding-top: var(--spacing-lg);
   padding-bottom: var(--spacing-lg);
-
-  /* `.hero` is `position: relative` with `z-index: auto`, which does NOT
-     create a stacking context, so its negative-z photo and overlay would
-     escape to the root and layer against whatever surrounds the hero. This
-     keeps them inside it -- above its background, below its content. */
-  isolation: isolate;
 }
 
 /* Stated explicitly rather than leaning on negative-z painting order, so the
@@ -451,10 +596,10 @@ label {
     /* Left wash: the copy is left-aligned inside the container, and a purely
        vertical gradient is not enough where the photo is brightest. */
     linear-gradient(90deg,
-      rgba(11, 11, 11, 0.66) 0%,
-      rgba(11, 11, 11, 0.44) 45%,
-      rgba(11, 11, 11, 0.12) 78%,
-      rgba(11, 11, 11, 0.04) 100%),
+      rgba(var(--color-bg-rgb), 0.66) 0%,
+      rgba(var(--color-bg-rgb), 0.44) 45%,
+      rgba(var(--color-bg-rgb), 0.12) 78%,
+      rgba(var(--color-bg-rgb), 0.04) 100%),
     /* Vertical: dark under the navbar, clearest around a quarter of the way
        down where nothing is written, then deepening through the headline and
        standfirst before blending into the page.
@@ -464,11 +609,11 @@ label {
        it; the 95th-percentile and brightest-pixel figures are what moved
        these numbers. */
     linear-gradient(180deg,
-      rgba(11, 11, 11, 0.62) 0%,
-      rgba(11, 11, 11, 0.16) 22%,
-      rgba(11, 11, 11, 0.42) 42%,
-      rgba(11, 11, 11, 0.58) 62%,
-      rgba(11, 11, 11, 0.82) 88%,
+      rgba(var(--color-bg-rgb), 0.62) 0%,
+      rgba(var(--color-bg-rgb), 0.16) 22%,
+      rgba(var(--color-bg-rgb), 0.42) 42%,
+      rgba(var(--color-bg-rgb), 0.58) 62%,
+      rgba(var(--color-bg-rgb), 0.82) 88%,
       var(--color-bg-base) 100%);
 }
 
@@ -481,7 +626,7 @@ label {
 /* The standfirst under a hero headline. Was `.text-muted`, a mid grey meant
    for body copy on the dark page background, not for text over a photograph. */
 .hero-lede {
-  color: #EDEDED;
+  color: var(--color-text-soft);
   font-size: 1.25rem;
   line-height: 1.6;
   max-width: 620px;
@@ -510,12 +655,12 @@ label {
   text-transform: uppercase;
 }
 .badge-primary {
-  background-color: rgba(69, 229, 44, 0.1);
-  color: var(--color-primary);
-  border: 1px solid rgba(69, 229, 44, 0.3);
+  background-color: rgba(var(--color-primary-rgb), 0.1);
+  color: var(--color-primary-text);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.3);
 }
 .gradient-text {
-  background: linear-gradient(100deg, var(--color-primary) 0%, #9BFF7A 100%);
+  background: var(--gradient-brand);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -557,7 +702,7 @@ label {
 }
 .btn-primary {
   background-color: var(--color-primary);
-  color: #000;
+  color: var(--color-on-primary);
   box-shadow: var(--glow-sm);
 }
 .btn-primary:hover {
@@ -566,16 +711,16 @@ label {
   transform: translateY(-2px);
 }
 .btn-outline {
-  background-color: rgba(255, 255, 255, 0.04);
+  background-color: rgba(var(--color-fg-rgb), 0.04);
   color: var(--color-text-main);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(var(--color-fg-rgb), 0.28);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
 .btn-outline:hover {
   background-color: var(--color-text-main);
   border-color: var(--color-text-main);
-  color: #000;
+  color: var(--color-bg-base);
 }
 
 /* Declared in Button.jsx's variant list but never given styles until now. */
@@ -585,8 +730,8 @@ label {
   border: none;
 }
 .btn-ghost:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-  color: var(--color-primary);
+  background-color: rgba(var(--color-fg-rgb), 0.08);
+  color: var(--color-primary-text);
 }
 
 /* Cards */
@@ -608,7 +753,7 @@ label {
 }
 .card:hover .card-icon {
   transform: scale(1.15) translateY(-3px);
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 .card-img-wrapper {
   width: 100%;
@@ -633,7 +778,7 @@ label {
 
 /* Footer */
 .footer {
-  background-color: #050505;
+  background-color: var(--color-bg-alt);
   padding: var(--spacing-xl) 0 var(--spacing-md);
   border-top: 1px solid var(--color-border);
   margin-top: auto;
@@ -660,7 +805,7 @@ label {
   transition: color var(--transition-fast);
 }
 .footer-links a:hover {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 .copyright {
   text-align: center;
@@ -691,7 +836,7 @@ label {
 }
 
 .footer-legal a:hover {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -838,7 +983,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
    it runs across, one column per stop.
    ======================================== */
 .story-section {
-  background-color: #050505;
+  background-color: var(--color-bg-alt);
 }
 
 .story-head {
@@ -871,7 +1016,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .story-body {
-  color: #D4D4D4;
+  color: var(--color-text-soft);
   font-size: 1.05rem;
   line-height: 1.7;
   white-space: pre-line;
@@ -945,9 +1090,9 @@ a.story-card:hover {
 }
 
 .story-card--next {
-  border-color: rgba(69, 229, 44, 0.45);
+  border-color: rgba(var(--color-primary-rgb), 0.45);
   background:
-    radial-gradient(130% 150% at 0% 0%, rgba(69, 229, 44, 0.16), transparent 62%),
+    radial-gradient(130% 150% at 0% 0%, rgba(var(--color-primary-rgb), 0.16), transparent 62%),
     var(--color-bg-surface-light);
 }
 
@@ -980,7 +1125,7 @@ a.story-card:hover {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .story-title {
@@ -998,7 +1143,7 @@ a.story-card:hover {
 }
 
 .story-meta svg {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .story-meta--next {
@@ -1012,7 +1157,7 @@ a.story-card:hover {
   align-items: center;
   gap: 6px;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   text-decoration: none;
 }
 
@@ -1081,7 +1226,6 @@ a.story-card:hover {
    distance is the question a first-timer actually arrives with.
    ======================================== */
 .guide-section {
-  background-color: #050505;
   border-top: 1px solid var(--color-border);
 }
 
@@ -1121,15 +1265,15 @@ a.story-card:hover {
 
 .guide-card p {
   margin: 0;
-  color: #D4D4D4;
+  color: var(--color-text-soft);
   line-height: 1.6;
   white-space: pre-line;
 }
 
 .guide-card--pick {
-  border-color: rgba(69, 229, 44, 0.45);
+  border-color: rgba(var(--color-primary-rgb), 0.45);
   background:
-    radial-gradient(130% 150% at 0% 0%, rgba(69, 229, 44, 0.12), transparent 62%),
+    radial-gradient(130% 150% at 0% 0%, rgba(var(--color-primary-rgb), 0.12), transparent 62%),
     var(--color-bg-surface-light);
 }
 
@@ -1146,8 +1290,8 @@ a.story-card:hover {
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: rgba(69, 229, 44, 0.12);
-  color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb), 0.12);
+  color: var(--color-primary-text);
 }
 
 .guide-starters {
@@ -1168,7 +1312,7 @@ a.story-card:hover {
 }
 
 .guide-starter-audience {
-  color: #D4D4D4;
+  color: var(--color-text-soft);
   font-size: 0.92rem;
 }
 
@@ -1183,7 +1327,7 @@ a.story-card:hover {
   gap: 6px;
   margin-top: auto;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   text-decoration: none;
 }
 
@@ -1244,17 +1388,18 @@ a.story-card:hover {
   padding: 22px 24px;
   border-bottom: 1px solid var(--color-border);
   background:
-    radial-gradient(130% 150% at 0% 0%, rgba(69, 229, 44, 0.16), transparent 62%),
+    radial-gradient(130% 150% at 0% 0%, rgba(var(--color-primary-rgb), 0.16), transparent 62%),
     var(--color-bg-surface-light);
 }
 
 .cat-card-distance {
-  font-size: clamp(1.75rem, 4vw, 2.25rem);
-  font-weight: 900;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.5vw, 2.6rem);
+  font-weight: 800;
   line-height: 1;
-  letter-spacing: -1px;
+  letter-spacing: 0.01em;
   text-transform: uppercase;
-  background: linear-gradient(90deg, var(--color-primary) 0%, #00ffcc 100%);
+  background: var(--gradient-brand);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1270,14 +1415,15 @@ a.story-card:hover {
   letter-spacing: 0.5px;
 }
 
+/* Sky blue, so that orange (.is-low) stands out as "hurry". */
 .cat-card-status.is-open {
-  background: rgba(69, 229, 44, 0.12);
-  border: 1px solid rgba(69, 229, 44, 0.35);
-  color: var(--color-primary);
+  background: rgba(var(--color-secondary-rgb), 0.12);
+  border: 1px solid rgba(var(--color-secondary-rgb), 0.35);
+  color: var(--color-secondary-text);
 }
 
 .cat-card-status.is-closed {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--color-fg-rgb), 0.06);
   border: 1px solid var(--color-border-light);
   color: var(--color-text-muted);
 }
@@ -1285,8 +1431,8 @@ a.story-card:hover {
 /* Ten or fewer places left. Orange used to mean "closed"; that moved to grey
    so orange can mean "hurry" without a sold-out card looking urgent. */
 .cat-card-status.is-low {
-  background: rgba(255, 107, 0, 0.12);
-  border: 1px solid rgba(255, 107, 0, 0.35);
+  background: rgba(var(--color-primary-rgb), 0.12);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.35);
   color: var(--color-accent);
 }
 
@@ -1327,15 +1473,15 @@ a.story-card:hover {
   background: currentColor;
 }
 
-.cat-card-level.is-beginner { color: var(--color-primary); }
-.cat-card-level.is-intermediate { color: #F5C542; }
-.cat-card-level.is-experienced { color: #FF7A7A; }
+.cat-card-level.is-beginner { color: var(--color-success); }
+.cat-card-level.is-intermediate { color: var(--color-warning); }
+.cat-card-level.is-experienced { color: var(--color-danger); }
 
 .cat-card-audience {
   margin: 0 0 10px;
   font-size: 0.9rem;
   line-height: 1.5;
-  color: #D4D4D4;
+  color: var(--color-text-soft);
 }
 
 .cat-card-meta {
@@ -1353,7 +1499,7 @@ a.story-card:hover {
   gap: 6px;
 }
 
-.cat-card-meta svg { color: var(--color-primary); }
+.cat-card-meta svg { color: var(--color-primary-text); }
 
 /* Price was missing from these cards entirely — it is the first thing a runner
    looks for. */
@@ -1382,7 +1528,7 @@ a.story-card:hover {
 }
 
 .cat-card-perks svg {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   flex-shrink: 0;
   margin-top: 3px;
 }
@@ -1413,7 +1559,7 @@ a.story-card:hover {
 }
 
 .cat-card-route-toggle:hover {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   border-color: var(--color-primary);
 }
 
@@ -1447,7 +1593,7 @@ a.story-card:hover {
 }
 
 .faq-item:hover {
-  border-color: rgba(69, 229, 44, 0.3);
+  border-color: rgba(var(--color-primary-rgb), 0.3);
 }
 
 /* A button, not a div — keyboard reachable and announced as expandable. */
@@ -1477,14 +1623,14 @@ a.story-card:hover {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   transition: transform var(--transition-normal), background var(--transition-normal), color var(--transition-normal);
 }
 
 .faq-chevron.is-open {
   transform: rotate(180deg);
   background: var(--color-primary);
-  color: #000;
+  color: var(--color-on-primary);
 }
 
 .faq-answer {
@@ -1513,7 +1659,7 @@ a.story-card:hover {
   justify-content: center;
   gap: 6px;
   margin-bottom: 24px;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .testimonial-quote {
@@ -1540,9 +1686,9 @@ a.story-card:hover {
   flex-shrink: 0;
   border-radius: 50%;
   overflow: hidden;
-  background: rgba(69, 229, 44, 0.12);
-  border: 1px solid rgba(69, 229, 44, 0.3);
-  color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb), 0.12);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.3);
+  color: var(--color-primary-text);
   font-weight: 800;
   font-size: 1rem;
   letter-spacing: 0.5px;
@@ -1594,7 +1740,7 @@ a.story-card:hover {
 
 .testimonial-nav-btn:hover {
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .testimonial-counter {
@@ -1668,9 +1814,9 @@ a.story-card:hover {
   width: 56px;
   height: 56px;
   border-radius: 14px;
-  background: rgba(69, 229, 44, 0.1);
-  border: 1px solid rgba(69, 229, 44, 0.22);
-  color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb), 0.1);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.22);
+  color: var(--color-primary-text);
 }
 
 .why-item h3 {
@@ -1731,7 +1877,7 @@ a.story-card:hover {
 a.sponsor-logo:hover {
   transform: translateY(-2px);
   border-color: var(--color-primary);
-  box-shadow: 0 8px 24px rgba(69, 229, 44, 0.15);
+  box-shadow: 0 8px 24px rgba(var(--color-primary-rgb), 0.15);
 }
 
 .sponsor-logo--md {
@@ -1788,7 +1934,7 @@ a.sponsor-logo:hover {
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: #EDEDED;
+  color: var(--color-text-soft);
   text-shadow: 0 1px 10px rgba(0, 0, 0, 0.85);
 }
 
@@ -1807,7 +1953,7 @@ a.sponsor-logo:hover {
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .sponsors-featured {
@@ -1892,7 +2038,7 @@ a.sponsor-logo:hover {
 .sponsor-strip.is-scrollable .sponsor-strip-viewport {
   overflow-x: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  scrollbar-color: rgba(var(--color-fg-rgb), 0.18) transparent;
 }
 
 .sponsor-strip-toggle {
@@ -1911,5 +2057,5 @@ a.sponsor-logo:hover {
 
 .sponsor-strip-toggle:hover {
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }

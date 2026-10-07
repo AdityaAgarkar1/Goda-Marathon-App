@@ -20,7 +20,7 @@ export default function NotFound() {
         noIndex
       />
       <div className="container" style={{ textAlign: 'center', maxWidth: '620px' }}>
-        <Compass size={56} style={{ color: 'var(--color-primary)', marginBottom: '24px' }} aria-hidden="true" />
+        <Compass size={56} style={{ color: 'var(--color-primary-text)', marginBottom: '24px' }} aria-hidden="true" />
         <p style={{ fontSize: '3.5rem', fontWeight: 900, lineHeight: 1, marginBottom: '12px' }}>404</p>
         <h1 style={{ fontSize: '1.75rem', marginBottom: '16px' }}>
           Off the <span className="accent-text">trail</span>

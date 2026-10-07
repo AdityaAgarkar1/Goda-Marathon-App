@@ -75,7 +75,7 @@ export interface RenderedEmail {
 
 /* ── Formatting ─────────────────────────────────────────────────────────── */
 
-const BRAND = '#2E9E1C';      // the site's #45E52C darkened to read on white
+const BRAND = '#C2410C';      // the site's orange as it reads on white (light theme --color-primary-text)
 const INK = '#1A1A1A';
 const MUTED = '#5F6368';
 const RULE = '#E6E6E6';
@@ -279,8 +279,8 @@ const layout = (ctx: EmailContext, preheader: string, body: string) => {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#EDEFED">
   <tr><td align="center" style="padding:24px 12px">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border-radius:12px;overflow:hidden">
-      <tr><td style="background:#0B0B0B;padding:24px 32px">
-        <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#45E52C;font-weight:700">${escapeHtml(ctx.organiser.name)}</div>
+      <tr><td style="background:#0B1626;padding:24px 32px">
+        <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#FF9A4D;font-weight:700">${escapeHtml(ctx.organiser.name)}</div>
         <div style="font-size:22px;line-height:1.3;color:#FFFFFF;font-weight:800;margin-top:4px">${escapeHtml(ctx.event.name)}</div>
       </td></tr>
       ${body}

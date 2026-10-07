@@ -86,7 +86,7 @@ export default function Results() {
   if (isLoading) {
     return (
       <div className="section" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Loader size={32} className="spin" style={{ color: 'var(--color-primary)' }} aria-hidden="true" />
+        <Loader size={32} className="spin" style={{ color: 'var(--color-primary-text)' }} aria-hidden="true" />
         <span className="sr-only">Loading results…</span>
       </div>
     );
@@ -107,7 +107,7 @@ export default function Results() {
           </h1>
 
           <div className="glass" style={{ maxWidth: '640px', margin: '40px auto', padding: '48px 32px', borderRadius: '16px', textAlign: 'center' }}>
-            <Clock size={44} style={{ color: 'var(--color-primary)', marginBottom: '20px' }} aria-hidden="true" />
+            <Clock size={44} style={{ color: 'var(--color-primary-text)', marginBottom: '20px' }} aria-hidden="true" />
             <h2 style={{ fontSize: '1.5rem', marginBottom: '12px' }}>Results are not published yet</h2>
             <p className="text-muted" style={{ marginBottom: '28px' }}>
               Official timings for {eventName} go up here once every finisher has been
@@ -156,7 +156,7 @@ export default function Results() {
                 id="results-category"
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                style={{ paddingLeft: '50px', borderRadius: '8px', width: '100%', appearance: 'none', background: 'rgba(255,255,255,0.05)' }}
+                style={{ paddingLeft: '50px', borderRadius: '8px', width: '100%', appearance: 'none', background: 'rgba(var(--color-fg-rgb), 0.05)' }}
               >
                 <option value="">All Categories</option>
                 {categoryOptions.map(c => <option key={c} value={c}>{c}</option>)}
@@ -182,7 +182,7 @@ export default function Results() {
               <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>{result.runner_name}</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span className="text-muted" style={{ fontSize: '0.85rem' }}>{result.category}</span>
-                <span style={{ color: 'var(--color-primary)', fontWeight: 800 }}>
+                <span style={{ color: 'var(--color-primary-text)', fontWeight: 800 }}>
                   {result.finish_time || STATUS_LABELS[result.finish_status] || result.finish_status}
                 </span>
               </div>
@@ -201,7 +201,7 @@ export default function Results() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <caption className="sr-only">Official race results for {eventName}</caption>
               <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.05)', textAlign: 'left' }}>
+                <tr style={{ background: 'rgba(var(--color-fg-rgb), 0.05)', textAlign: 'left' }}>
                   <th scope="col" style={{ padding: '16px 20px', color: 'var(--color-text-muted)', fontWeight: 600 }}>Category Rank</th>
                   <th scope="col" style={{ padding: '16px 20px', color: 'var(--color-text-muted)', fontWeight: 600 }}>Overall</th>
                   <th scope="col" style={{ padding: '16px 20px', color: 'var(--color-text-muted)', fontWeight: 600 }}>Bib</th>
@@ -212,7 +212,7 @@ export default function Results() {
               </thead>
               <tbody>
                 {filtered.map((result, i) => (
-                  <tr key={result.bib} style={{ borderTop: '1px solid var(--color-border)', backgroundColor: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                  <tr key={result.bib} style={{ borderTop: '1px solid var(--color-border)', backgroundColor: i % 2 === 0 ? 'transparent' : 'rgba(var(--color-fg-rgb), 0.02)' }}>
                     <td style={{ padding: '16px 20px', fontWeight: 800 }}>
                       {result.category_rank ? (
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
@@ -227,7 +227,7 @@ export default function Results() {
                     <td style={{ padding: '16px 20px' }}><span className="badge badge-primary">{result.bib}</span></td>
                     <td style={{ padding: '16px 20px', fontWeight: 600 }}>{result.runner_name}</td>
                     <td style={{ padding: '16px 20px' }}>{result.category}</td>
-                    <td style={{ padding: '16px 20px', color: 'var(--color-primary)', fontWeight: 800 }}>
+                    <td style={{ padding: '16px 20px', color: 'var(--color-primary-text)', fontWeight: 800 }}>
                       {result.finish_time || (
                         <span className="text-muted" style={{ fontWeight: 600 }}>
                           {STATUS_LABELS[result.finish_status] || result.finish_status}

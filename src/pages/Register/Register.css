@@ -32,7 +32,7 @@
   color: var(--color-text-muted);
 }
 
-.reg-loading svg { color: var(--color-primary); }
+.reg-loading svg { color: var(--color-primary-text); }
 
 .reg-closed {
   text-align: center;
@@ -89,12 +89,12 @@
 .reg-step.is-current .reg-step-num {
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: #000;
+  color: var(--color-on-primary);
 }
 
 .reg-step.is-done .reg-step-num {
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 @media (max-width: 520px) {
@@ -119,10 +119,10 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(69, 229, 44, 0.15);
+  border-bottom: 1px solid rgba(var(--color-primary-rgb), 0.15);
 }
 
 .reg-section-note {
@@ -135,8 +135,8 @@
   padding: 12px 16px;
   margin-bottom: 1.25rem;
   border-radius: var(--radius-md);
-  background: rgba(255, 107, 0, 0.08);
-  border: 1px solid rgba(255, 107, 0, 0.25);
+  background: rgba(var(--color-primary-rgb), 0.08);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.25);
   color: var(--color-accent);
   font-size: 0.85rem;
   font-weight: 500;
@@ -170,7 +170,7 @@
   width: 100%;
   padding: 12px 14px;
   min-height: 46px;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(var(--color-fg-rgb), 0.05);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-main);
@@ -182,7 +182,7 @@
 .reg-control:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(69, 229, 44, 0.18);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.18);
 }
 
 /* Invalid fields carry a red border AND an icon-led message, so the state is
@@ -250,7 +250,7 @@
   padding: 16px 18px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--color-fg-rgb), 0.03);
   cursor: pointer;
   transition: border-color var(--transition-fast), background var(--transition-fast);
 }
@@ -259,7 +259,7 @@
 
 .reg-category.is-selected {
   border-color: var(--color-primary);
-  background: rgba(69, 229, 44, 0.07);
+  background: rgba(var(--color-primary-rgb), 0.07);
 }
 
 .reg-category.is-disabled {
@@ -282,7 +282,7 @@
   flex-shrink: 0;
   border-radius: 50%;
   border: 2px solid var(--color-border-light);
-  color: #000;
+  color: var(--color-on-primary);
 }
 
 .reg-category.is-selected .reg-category-check {
@@ -353,7 +353,7 @@
   padding: 14px 16px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--color-fg-rgb), 0.02);
   transition: border-color var(--transition-fast);
 }
 
@@ -407,7 +407,7 @@
 }
 
 .reg-summary-total dt { font-size: 0.95rem; color: var(--color-text-main); font-weight: 600; }
-.reg-summary-total dd { font-size: 1.35rem; font-weight: 800; color: var(--color-primary); }
+.reg-summary-total dd { font-size: 1.35rem; font-weight: 800; color: var(--color-primary-text); }
 
 /* ── Payment note ─────────────────────────────────────────────────────── */
 .reg-payment-note {
@@ -415,7 +415,7 @@
   gap: 12px;
   padding: 16px 18px;
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--color-fg-rgb), 0.03);
   border: 1px solid var(--color-border);
 }
 
@@ -458,7 +458,7 @@
 /* ── Success ──────────────────────────────────────────────────────────── */
 .reg-success { text-align: center; }
 
-.reg-success-icon { color: var(--color-primary); margin: 0 auto 1.25rem; }
+.reg-success-icon { color: var(--color-primary-text); margin: 0 auto 1.25rem; }
 
 .reg-success-title { font-size: 1.85rem; font-weight: 800; margin-bottom: 8px; }
 
@@ -473,7 +473,7 @@
   margin: 0 auto 2rem;
   padding: 1.5rem;
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--color-fg-rgb), 0.03);
   border: 1px solid var(--color-border);
   text-align: left;
 }
@@ -501,7 +501,7 @@
   font-weight: 900;
   line-height: 1;
   letter-spacing: 2px;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   font-variant-numeric: tabular-nums;
 }
 
@@ -532,15 +532,15 @@
 }
 
 .reg-status-pending {
-  background: rgba(255, 107, 0, 0.12);
-  border: 1px solid rgba(255, 107, 0, 0.3);
+  background: rgba(var(--color-primary-rgb), 0.12);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.3);
   color: var(--color-accent);
 }
 
 .reg-status-paid {
-  background: rgba(69, 229, 44, 0.12);
-  border: 1px solid rgba(69, 229, 44, 0.3);
-  color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb), 0.12);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.3);
+  color: var(--color-primary-text);
 }
 
 .reg-success-next {
@@ -548,8 +548,8 @@
   margin: 0 auto 2rem;
   padding: 1.5rem;
   border-radius: var(--radius-lg);
-  background: rgba(69, 229, 44, 0.05);
-  border: 1px solid rgba(69, 229, 44, 0.2);
+  background: rgba(var(--color-primary-rgb), 0.05);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.2);
   text-align: left;
 }
 
@@ -571,18 +571,18 @@
 .reg-success-contact {
   margin: 1.15rem 0 0;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(var(--color-fg-rgb), 0.08);
   font-size: 0.85rem;
   color: var(--color-text-muted);
 }
 
-.reg-success-contact a { color: var(--color-primary); font-weight: 600; }
+.reg-success-contact a { color: var(--color-primary-text); font-weight: 600; }
 
 /* ── Payment step ───────────────────────────────────────────────────────── */
 /* Between "reserved" and "confirmed". Built on the success-screen layout so
    the page does not jump when payment lands and the success screen replaces
    it. */
-.reg-pay-icon { color: var(--color-primary); margin: 0 auto 1.25rem; }
+.reg-pay-icon { color: var(--color-primary-text); margin: 0 auto 1.25rem; }
 .reg-pay-icon--warn { color: var(--color-accent); }
 
 .reg-pay .reg-success-contact {
@@ -656,8 +656,8 @@
   margin: 0 auto 1.25rem;
   padding: 16px 18px;
   border-radius: var(--radius-md);
-  background: rgba(255, 107, 0, 0.06);
-  border: 1px solid rgba(255, 107, 0, 0.3);
+  background: rgba(var(--color-primary-rgb), 0.06);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.3);
   text-align: left;
 }
 
@@ -709,7 +709,7 @@
 /* The code used to be stored and shown as "checked by organisers". It is now
    priced by the database before submission, so the summary has a discount line
    and a way to say a code will not apply. */
-.reg-summary-discount dd { color: var(--color-primary); font-weight: 700; }
+.reg-summary-discount dd { color: var(--color-primary-text); font-weight: 700; }
 .reg-summary-note--warn { color: var(--color-accent); }
 
 /* ── Group registration cross-link ──────────────────────────────────────── */
@@ -724,12 +724,12 @@
   border: 1px solid var(--color-border);
   border-left: 3px solid var(--color-primary);
   border-radius: var(--radius-md);
-  background: rgba(69, 229, 44, 0.05);
+  background: rgba(var(--color-primary-rgb), 0.05);
   font-size: 0.87rem;
   line-height: 1.6;
   color: var(--color-text-muted);
 }
 
-.reg-group-link svg { color: var(--color-primary); flex-shrink: 0; margin-top: 3px; }
-.reg-group-link a { color: var(--color-primary); font-weight: 700; }
+.reg-group-link svg { color: var(--color-primary-text); flex-shrink: 0; margin-top: 3px; }
+.reg-group-link a { color: var(--color-primary-text); font-weight: 700; }
 .reg-group-link a:hover { text-decoration: underline; }
