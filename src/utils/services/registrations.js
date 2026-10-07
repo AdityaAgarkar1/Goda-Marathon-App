@@ -417,6 +417,27 @@ export const getCategoryAvailability = async (eventSlug) => {
   }
 };
 
+/**
+ * The bibs the database issued for an entry or a group: [{ id, bib, category,
+ * payment_status }], in bib order.
+ *
+ * An online entry is numbered only when its payment is confirmed (migration
+ * 0017), and not every route to "paid" brings the row back -- the webhook can
+ * settle it first. The confirmation screens ask here for the number. Answers
+ * only for an id the browser was given when it created the entry.
+ */
+export const getEntryBibs = async ({ registrationId = null, groupId = null }) => {
+  const { data, error } = await supabase.rpc('get_entry_bibs', {
+    p_registration_id: registrationId,
+    p_group_id: groupId,
+  });
+  if (error) {
+    console.error('Error fetching bib numbers', error);
+    throw error;
+  }
+  return data || [];
+};
+
 /** Published results for the public results board. Empty until published. */
 export const getPublishedResults = async (eventSlug) => {
   try {

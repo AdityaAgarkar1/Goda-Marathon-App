@@ -51,6 +51,25 @@ export const getEventCategories = async (eventId, eventSlug = null) => {
   }
 };
 
+/**
+ * Admin only. Per category: its bib series, numbers issued, numbers retired by
+ * cancelled entries, reservations still awaiting payment (no bib yet), entries
+ * that should have a bib but have none because the series filled up, numbers
+ * left, and the next number to be issued. Empty before migration 0017 or for a
+ * non-admin session.
+ */
+export const getBibOverview = async (eventId) => {
+  if (!eventId) return [];
+  try {
+    const { data, error } = await supabase.rpc('admin_bib_overview', { p_event_id: eventId });
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching bib overview', error);
+    return [];
+  }
+};
+
 /** Admin only — 0006 restricts writes to authenticated admins. */
 export const addEventCategory = async (categoryData) => {
   const { data, error } = await supabase

@@ -734,6 +734,115 @@
   color: var(--color-text-muted);
 }
 
+.admin-field-hint--warn {
+  color: var(--color-accent);
+}
+
+/* Bib series (Categories tab) */
+.admin-bib-panel {
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+}
+
+.admin-bib-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.admin-bib-panel-head h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.admin-bib-panel-head > div {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.admin-bib-lookup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text-muted);
+  flex: 0 1 220px;
+}
+
+.admin-bib-lookup input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 0;
+  background: transparent;
+  border: none;
+  color: var(--color-text-main);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The ring goes on the wrapper, which draws the visible box. */
+.admin-bib-lookup input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.admin-bib-lookup:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(69, 229, 44, 0.18);
+}
+
+.admin-bib-lookup-result {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+}
+
+.admin-bib-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0.5rem 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(255, 170, 0, 0.1);
+  border: 1px solid rgba(255, 170, 0, 0.35);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.admin-bib-warning svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--color-accent);
+}
+
+.admin-bib-table td,
+.admin-bib-table th {
+  padding: 10px;
+}
+
+.admin-bib-table .admin-badge {
+  white-space: nowrap;
+}
+
+.admin-cat-bibs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Media Grid */
 .admin-media-grid {
   display: grid;

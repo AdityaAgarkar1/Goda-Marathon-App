@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { notDeployed } from './registrations';
+import { compareBibs } from '../bibSeries';
 
 /**
  * Bulk (group) registrations.
@@ -199,9 +200,11 @@ export const getGroupMembers = async (groupId) => {
       .from('registrations')
       .select('*')
       .eq('group_id', groupId)
-      .order('bib', { ascending: true });
+      .order('created_at', { ascending: true });
     if (error) throw error;
-    return data || [];
+    // By bib as a number: the column is text, and text order would put a
+    // 10 km runner's 10001 before a 5 km runner's 5001.
+    return (data || []).sort((a, b) => compareBibs(a.bib, b.bib));
   } catch (error) {
     console.error('Error fetching group members', error);
     return [];

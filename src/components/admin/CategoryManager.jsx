@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, X, Trash2, Edit3, Users } from 'lucide-react';
-import { getEventCategories, addEventCategory, updateEventCategory, deleteEventCategory } from '../../utils/services/categories';
+import { Plus, X, Trash2, Edit3, Users, Hash } from 'lucide-react';
+import { getEventCategories, getBibOverview, addEventCategory, updateEventCategory, deleteEventCategory } from '../../utils/services/categories';
 import { describeSaveError } from '../../utils/services/errors';
 import { CATEGORY_LEVELS, levelLabel } from '../../utils/categoryLevels';
+import { formatBibSeries, validateBibSeries } from '../../utils/bibSeries';
+import BibSeriesPanel from './BibSeriesPanel';
 
 export default function CategoryManager({ eventId, eventSlug }) {
   const [categories, setCategories] = useState([]);
+  const [bibOverview, setBibOverview] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -20,6 +23,8 @@ export default function CategoryManager({ eventId, eventSlug }) {
     perks: '', elevation_image: '',
     // Who the distance suits (0016). Empty saves as NULL, which hides it.
     level: '', audience: '',
+    // Bib series (0017). Both empty: the database picks one from the distance.
+    bib_start: '', bib_end: '',
   };
   const [formData, setFormData] = useState(emptyForm);
 
@@ -32,7 +37,12 @@ export default function CategoryManager({ eventId, eventSlug }) {
     setIsLoading(true);
     try {
       // Counts come from get_category_availability, not from reading entrants.
-      setCategories(await getEventCategories(eventId, eventSlug));
+      const [cats, bibs] = await Promise.all([
+        getEventCategories(eventId, eventSlug),
+        getBibOverview(eventSlug || eventId),
+      ]);
+      setCategories(cats);
+      setBibOverview(bibs);
     } catch (err) {
       setFormError(describeSaveError(err, 'categories'));
     } finally {
@@ -56,6 +66,13 @@ export default function CategoryManager({ eventId, eventSlug }) {
     if (!formData.name.trim()) { setFormError('Category name is required.'); return; }
     if (!formData.distance.trim()) { setFormError('Distance is required.'); return; }
     if (!formData.price || parseInt(formData.price) <= 0) { setFormError('Valid price is required.'); return; }
+    const seriesError = validateBibSeries({
+      start: formData.bib_start,
+      end: formData.bib_end,
+      maxSlots: parseInt(formData.max_slots) || 200,
+      others: categories.filter(c => c.id !== editingId),
+    });
+    if (seriesError) { setFormError(seriesError); return; }
 
     setIsSubmitting(true);
     try {
@@ -74,6 +91,9 @@ export default function CategoryManager({ eventId, eventSlug }) {
         elevation_image: formData.elevation_image.trim() || null,
         level: formData.level || null,
         audience: formData.audience.trim() || null,
+        // Both null asks the database for a series coded by distance.
+        bib_start: String(formData.bib_start).trim() ? parseInt(formData.bib_start) : null,
+        bib_end: String(formData.bib_end).trim() ? parseInt(formData.bib_end) : null,
       };
 
       if (editingId) {
@@ -103,6 +123,7 @@ export default function CategoryManager({ eventId, eventSlug }) {
       display_order: cat.display_order || 0,
       perks: perksToLines(cat.perks), elevation_image: cat.elevation_image || '',
       level: cat.level || '', audience: cat.audience || '',
+      bib_start: cat.bib_start ?? '', bib_end: cat.bib_end ?? '',
     });
     setEditingId(cat.id);
     setShowForm(true);
@@ -195,6 +216,24 @@ export default function CategoryManager({ eventId, eventSlug }) {
             </div>
           </div>
 
+          <fieldset className="admin-media-form-grid" style={{ marginTop: '0.75rem', border: 'none', padding: 0 }}>
+            <legend className="sr-only">Bib series</legend>
+            <div className="admin-media-form-group">
+              <label htmlFor="cat-bib-start">First Bib Number</label>
+              <input id="cat-bib-start" name="bib_start" type="number" min="1" max="999999" value={formData.bib_start} onChange={handleInput} placeholder="Automatic" aria-describedby="cat-bib-hint" />
+            </div>
+            <div className="admin-media-form-group">
+              <label htmlFor="cat-bib-end">Last Bib Number</label>
+              <input id="cat-bib-end" name="bib_end" type="number" min="1" max="999999" value={formData.bib_end} onChange={handleInput} placeholder="Automatic" aria-describedby="cat-bib-hint" />
+            </div>
+          </fieldset>
+          <span id="cat-bib-hint" className="admin-field-hint">
+            Every runner in this category gets a bib from this range, so the number shows the race.
+            Leave both empty for one coded by distance (21 km → 21001–21999). The range must hold at
+            least Max Slots numbers, must not overlap another category, and cannot be moved away from
+            bibs already issued.
+          </span>
+
           <div className="admin-media-form-group" style={{ marginTop: '0.75rem' }}>
             <label htmlFor="cat-audience">Who It&apos;s For</label>
             <input
@@ -250,6 +289,8 @@ export default function CategoryManager({ eventId, eventSlug }) {
           <p>No categories configured yet. Click "Add Category" to create race categories.</p>
         </div>
       ) : (
+        <>
+        <BibSeriesPanel categories={categories} overview={bibOverview} />
         <div className="admin-cat-grid">
           {categories.map(cat => {
             const registered = cat.registration_count || 0;
@@ -268,6 +309,11 @@ export default function CategoryManager({ eventId, eventSlug }) {
 
                 <div className="admin-cat-card-body">
                   <div className="admin-cat-price">{formatPrice(cat.price)}</div>
+                  {formatBibSeries(cat) && (
+                    <div className="admin-cat-bibs">
+                      <Hash size={14} aria-hidden="true" /> Bibs {formatBibSeries(cat)}
+                    </div>
+                  )}
                   <div className="admin-cat-meta">
                     <span>Min Age: {cat.min_age || 5}</span>
                     <span>Flag-off: {cat.flag_off_time || '—'}</span>
@@ -299,6 +345,7 @@ export default function CategoryManager({ eventId, eventSlug }) {
             );
           })}
         </div>
+        </>
       )}
     </div>
   );

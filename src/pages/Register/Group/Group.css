@@ -368,6 +368,12 @@
   overflow-wrap: anywhere;
 }
 
+.grp-bib-pending {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
 /* ── Coupon ─────────────────────────────────────────────────────────────── */
 .grp-coupon {
   display: grid;

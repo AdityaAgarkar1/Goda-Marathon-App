@@ -97,6 +97,7 @@ Apply them **in order** in the Supabase SQL editor, or with
 | `0011_razorpay_payments.sql` | Online payment: reservations with a deadline, `payments` table, settlement functions |
 | `0012_cancel_reservation.sql` | Lets a runner release their own unpaid reservation from the payment step |
 | `0015_sponsors.sql` | Sponsor logos for the homepage strip and hero partner credit (Admin → Content → Sponsors) |
+| `0017_category_bib_series.sql` | A bib number series per category (21 km → 21001–21999), issued by the database; renumbers live entries of upcoming events |
 
 0009 is not optional. 0006 removed the old permissive policies by name, which
 missed allow-all policies that had been created outside these migrations. It
@@ -178,9 +179,10 @@ simply does not appear.
 
 ### How it works
 
-1. Submitting the form **reserves** the entry: bib, place and coupon are held
-   for 30 minutes (adjustable in Settings) and the row is `PENDING` with a
-   `payment_due_at` deadline.
+1. Submitting the form **reserves** the entry: place and coupon are held for
+   30 minutes (adjustable in Settings) and the row is `PENDING` with a
+   `payment_due_at` deadline. The bib number is issued when the payment is
+   confirmed, so abandoned checkouts do not use up numbers (0017).
 2. The `razorpay-order` edge function reads what is owed **from the database**
    and creates a Razorpay order. The browser sends only the reservation's id.
 3. Checkout opens in the page. The runner pays by UPI, card, net banking, etc.
@@ -379,9 +381,17 @@ previously mixed five hardcoded finishers with randomly generated finish times
 assigned at sign-up, so anyone who had merely registered could look up their bib
 and find a time and a rank waiting for them.
 
-**Bib numbers** come from a per-event counter with a unique index behind it.
-They were `Math.random()` over 9000 values, where a collision becomes more
-likely than not by about the 112th entry.
+**Bib numbers** come from a series per category, so the number shows the
+race: by default the distance in thousands (5 km → 5001–5999, 21 km →
+21001–21999), editable under Admin → Categories, which also has a lookup for
+"which race is bib N?". A trigger on `registrations` issues them (0017): when
+the entry holds its place for good (paid, free, or offline pending), never
+twice in an event, and afresh after a category change. The database refuses a
+series that overlaps another, is smaller than the category's capacity, or
+would strand bibs already issued, and refuses a typed bib outside the runner's
+series. Bibs were once `Math.random()` over 9000 values, where a collision
+becomes more likely than not by about the 112th entry; 0007 replaced that with
+a per-event counter, which 0017 replaces in turn.
 
 **Entry prices** are read from `event_categories` inside the database. The
 browser used to send the price, so anyone could enter any category for zero.

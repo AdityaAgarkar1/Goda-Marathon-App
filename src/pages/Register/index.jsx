@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Loader, Users, RotateCcw } from 'lucide-react';
 
 import { CATEGORY_PRICING, CURRENT_EVENT, CATEGORY_RULES } from '../../utils/constants';
-import { addRegistration, isEmailRegistered } from '../../utils/services/registrations';
+import { addRegistration, isEmailRegistered, getEntryBibs } from '../../utils/services/registrations';
 import { getEventCategories } from '../../utils/services/categories';
 import { getCurrentEvent } from '../../utils/services/events';
 import { previewCoupon } from '../../utils/services/coupons';
@@ -401,6 +401,25 @@ export default function Register() {
     localStorage.removeItem(DRAFT_KEY);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+
+  // An online entry is given its bib when the payment is confirmed, and the
+  // "paid" result does not always carry the row (the webhook may have settled
+  // it first). Likewise when online payment is switched off mid-payment: the
+  // entry becomes an offline one and is numbered then. Ask once for the
+  // number the database issued.
+  const paidWithoutBib = (registration?.payment_status === 'PAID' || payPhase === 'offline')
+    && !!registration?.id && !registration?.bib;
+  useEffect(() => {
+    if (!paidWithoutBib) return undefined;
+    let stale = false;
+    getEntryBibs({ registrationId: registration.id })
+      .then(([entry]) => {
+        if (stale || !entry?.bib) return;
+        setRegistration(prev => (prev?.id === entry.id ? { ...prev, bib: entry.bib } : prev));
+      })
+      .catch(() => { /* the success screen says the number is on its way by email */ });
+    return () => { stale = true; };
+  }, [paidWithoutBib, registration?.id]);
 
   const startPayment = useCallback(async (reg, prefill) => {
     trackEvent('payment_started', { flow: 'solo', amount: reg?.price });

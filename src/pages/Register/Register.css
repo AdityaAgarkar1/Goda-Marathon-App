@@ -505,6 +505,21 @@
   font-variant-numeric: tabular-nums;
 }
 
+.reg-success-bib-category {
+  margin-top: 2px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  text-align: center;
+}
+
+.reg-success-bib-note {
+  max-width: 32ch;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
 .reg-status-pending,
 .reg-status-paid {
   display: inline-flex;

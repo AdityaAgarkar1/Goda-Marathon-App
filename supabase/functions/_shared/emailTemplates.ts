@@ -94,6 +94,13 @@ const clean = (value: unknown): string => String(value ?? '').trim();
 const fullName = (first?: string | null, last?: string | null) =>
   [clean(first), clean(last)].filter(Boolean).join(' ');
 
+/** Bib order as numbers: stored as text, "10001" would sort before "5001". */
+const byBib = (a: EmailRunner, b: EmailRunner) => {
+  const x = /^\d+$/.test(clean(a.bib)) ? Number(clean(a.bib)) : Infinity;
+  const y = /^\d+$/.test(clean(b.bib)) ? Number(clean(b.bib)) : Infinity;
+  return x === y ? 0 : x < y ? -1 : 1;
+};
+
 const toNumber = (value: unknown): number | null => {
   if (value === null || value === undefined || value === '') return null;
   const n = Number(value);
@@ -350,7 +357,8 @@ function renderRunner(ctx: EmailContext): RenderedEmail {
 
   const body = [
     paragraph(lead),
-    highlight('Bib number', bib, confirmed ? 'Entry confirmed' : 'Payment pending', !confirmed),
+    // Each category has its own bib series, so the race is named with the number.
+    highlight('Bib number', bib, [clean(r.category), confirmed ? 'Entry confirmed' : 'Payment pending'].filter(Boolean).join(' · '), !confirmed),
     detailTable('Event', eventRows(ctx.event)),
     detailTable('Your entry', entryRows),
     detailTable('Payment', paymentRows),
@@ -368,7 +376,7 @@ function renderRunner(ctx: EmailContext): RenderedEmail {
       ? `Your place in ${eventName} is confirmed. Keep this email: it is your record of entry.`
       : `We have received your registration for ${eventName}. Your place is confirmed once payment is received; the organisers will contact you with payment instructions.`,
     '',
-    `BIB NUMBER: ${bib || '-'} (${confirmed ? 'entry confirmed' : 'payment pending'})`,
+    `BIB NUMBER: ${bib || '-'}${clean(r.category) ? ` · ${clean(r.category)}` : ''} (${confirmed ? 'entry confirmed' : 'payment pending'})`,
     '',
     textRows([
       ['Date', formatEventDate(ctx.event.date)],
@@ -399,7 +407,7 @@ function renderRunner(ctx: EmailContext): RenderedEmail {
 
 function renderGroup(ctx: EmailContext): RenderedEmail {
   const g = ctx.group ?? { group_code: '' };
-  const members = ctx.members ?? [];
+  const members = [...(ctx.members ?? [])].sort(byBib);
   const confirmed = ctx.kind === 'GROUP_CONFIRMED';
   const first = clean(g.captain_first_name) || 'there';
   const eventName = ctx.event.name;

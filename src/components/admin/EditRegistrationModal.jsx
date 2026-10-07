@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { X, Save } from 'lucide-react';
+import { describeSaveError } from '../../utils/services/errors';
+import { bibNumber, formatBibSeries } from '../../utils/bibSeries';
 
 export default function EditRegistrationModal({ registration, categories, onSave, onClose }) {
   const [formData, setFormData] = useState({
@@ -12,21 +14,45 @@ export default function EditRegistrationModal({ registration, categories, onSave
     bib: registration.bib || '',
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const handleInput = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setSaveError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
+    setSaveError('');
     try {
       await onSave(registration.id, formData);
+    } catch (err) {
+      setSaveError(describeSaveError(err, 'registration'));
     } finally {
       setIsSaving(false);
     }
   };
+
+  // Each category owns a bib series (migration 0017). The database issues and
+  // checks the numbers; this only tells the organiser what will happen.
+  const selected = categories.find(c => typeof c !== 'string' && c.name === formData.category);
+  const series = formatBibSeries(selected);
+  const bibUnchanged = formData.bib.trim() === (registration.bib || '');
+  const categoryChanged = formData.category !== (registration.category || '');
+  const typed = bibNumber(formData.bib);
+  const typedOutside = !bibUnchanged && typed !== null && selected
+    && (typed < selected.bib_start || typed > selected.bib_end);
+
+  let bibHint = series ? `${formData.category} series: ${series}.` : '';
+  if (categoryChanged && bibUnchanged && registration.bib && series) {
+    bibHint = `A new bib from the ${series} series is issued when you save. The runner is not re-emailed automatically.`;
+  } else if (!formData.bib.trim()) {
+    bibHint = `Leave empty to issue the next number${series ? ` in ${series}` : ''} automatically.`;
+  } else if (typedOutside) {
+    bibHint = `${typed} is outside the ${formData.category} series (${series}). The database will refuse it.`;
+  }
 
   return (
     <div className="admin-modal-overlay" onClick={onClose}>
@@ -50,18 +76,36 @@ export default function EditRegistrationModal({ registration, categories, onSave
               <input name="email" type="email" value={formData.email} onChange={handleInput} />
             </div>
             <div className="admin-media-form-group">
-              <label>Bib Number</label>
-              <input name="bib" value={formData.bib} onChange={handleInput} />
+              <label htmlFor="edit-reg-bib">Bib Number</label>
+              <input
+                id="edit-reg-bib"
+                name="bib"
+                value={formData.bib}
+                onChange={handleInput}
+                inputMode="numeric"
+                placeholder="Issued automatically"
+                aria-describedby="edit-reg-bib-hint"
+                aria-invalid={typedOutside || undefined}
+              />
+              {bibHint && (
+                <span id="edit-reg-bib-hint" className={`admin-field-hint${typedOutside ? ' admin-field-hint--warn' : ''}`}>
+                  {bibHint}
+                </span>
+              )}
             </div>
             <div className="admin-media-form-group">
               <label>Category</label>
               <select name="category" value={formData.category} onChange={handleInput}>
                 <option value="">Select...</option>
-                {categories.map((cat, i) => (
-                  <option key={i} value={typeof cat === 'string' ? cat : cat.name}>
-                    {typeof cat === 'string' ? cat : cat.name}
-                  </option>
-                ))}
+                {categories.map((cat, i) => {
+                  const name = typeof cat === 'string' ? cat : cat.name;
+                  const range = typeof cat === 'string' ? '' : formatBibSeries(cat);
+                  return (
+                    <option key={i} value={name}>
+                      {range ? `${name} (${range})` : name}
+                    </option>
+                  );
+                })}
               </select>
             </div>
             <div className="admin-media-form-group">
@@ -81,6 +125,11 @@ export default function EditRegistrationModal({ registration, categories, onSave
               </select>
             </div>
           </div>
+          {saveError && (
+            <div className="admin-login-error" role="alert" style={{ marginTop: '0.75rem' }}>
+              <span>{saveError}</span>
+            </div>
+          )}
           <div className="admin-modal-footer">
             <button type="button" className="btn btn-outline" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={isSaving} style={{ gap: '6px', display: 'inline-flex', alignItems: 'center' }}>

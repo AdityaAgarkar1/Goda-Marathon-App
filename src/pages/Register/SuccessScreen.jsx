@@ -32,6 +32,18 @@ export default function SuccessScreen({ registration, eventName, contactEmail, c
         <div className="reg-success-bib">
           <span className="reg-success-bib-label">Bib Number</span>
           <span className="reg-success-bib-value">{bib || '—'}</span>
+          {/* Each category has its own number series, so the bib and the
+              race go together; say which race this number belongs to. */}
+          {registration?.category && (
+            <span className="reg-success-bib-category">{registration.category}</span>
+          )}
+          {!bib && (
+            <span className="reg-success-bib-note" role="status">
+              {isPaid
+                ? `Your bib number is being issued${emailsEnabled ? ' and will be in your confirmation email' : ''}.`
+                : 'Your bib number is issued once your entry is confirmed.'}
+            </span>
+          )}
         </div>
 
         <dl className="reg-summary-list">

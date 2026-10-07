@@ -155,7 +155,11 @@ export default function GroupSuccess({
             <tbody>
               {participants.map(p => (
                 <tr key={p.id}>
-                  <td><strong>{p.bib}</strong></td>
+                  <td>
+                    {p.bib
+                      ? <strong>{p.bib}</strong>
+                      : <span className="grp-bib-pending">Being issued</span>}
+                  </td>
                   <td>
                     <span className="grp-review-name">{p.first_name} {p.last_name}</span>
                     <span className="grp-review-email">{p.email}</span>

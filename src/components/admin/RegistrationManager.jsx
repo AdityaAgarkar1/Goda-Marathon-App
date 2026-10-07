@@ -177,12 +177,18 @@ export default function RegistrationManager({ eventSlug, eventUuid }) {
     } catch (err) { console.error('Cancel failed:', err); }
   };
 
+  // Errors go back to the modal, which shows them: the database refuses a bib
+  // outside the runner's series or one already issued, and says why.
   const handleEditSave = async (id, updates) => {
-    try {
-      await updateRegistration(id, updates);
-      setEditingReg(null);
-      await fetchData();
-    } catch (err) { console.error('Edit save failed:', err); }
+    await updateRegistration(id, updates);
+    setEditingReg(null);
+    await fetchData();
+  };
+
+  // An online reservation is numbered when it is paid (migration 0017).
+  const bibLabel = (row) => {
+    if (row.bib) return row.bib;
+    return row.payment_status === 'PENDING' && row.payment_due_at ? 'On payment' : '—';
   };
 
   const statusBadge = (status) => {
@@ -337,7 +343,11 @@ export default function RegistrationManager({ eventSlug, eventUuid }) {
                       <td className="admin-cell-name">{row.first_name} {row.last_name}</td>
                       <td className="admin-cell-muted">{row.email}</td>
                       <td>{row.category}</td>
-                      <td><span className="admin-badge admin-badge-paid">{row.bib || '—'}</span></td>
+                      <td>
+                        {row.bib
+                          ? <span className="admin-badge admin-badge-paid">{row.bib}</span>
+                          : <span className="admin-cell-muted">{bibLabel(row)}</span>}
+                      </td>
                       <td className="admin-cell-muted">{new Date(row.created_at).toLocaleDateString()}</td>
                       <td>
                         <button onClick={() => handleTogglePayment(row)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} title="Click to toggle">
@@ -382,7 +392,7 @@ export default function RegistrationManager({ eventSlug, eventUuid }) {
                 <div className="admin-reg-card-details">
                   <div className="admin-reg-card-row"><span className="admin-reg-card-label">Email</span><span className="admin-reg-card-value">{row.email}</span></div>
                   <div className="admin-reg-card-row"><span className="admin-reg-card-label">Category</span><span className="admin-reg-card-value">{row.category}</span></div>
-                  <div className="admin-reg-card-row"><span className="admin-reg-card-label">Bib</span><span className="admin-reg-card-value">{row.bib || '—'}</span></div>
+                  <div className="admin-reg-card-row"><span className="admin-reg-card-label">Bib</span><span className="admin-reg-card-value">{bibLabel(row)}</span></div>
                   <div className="admin-reg-card-row"><span className="admin-reg-card-label">Date</span><span className="admin-reg-card-value">{new Date(row.created_at).toLocaleDateString()}</span></div>
                 </div>
                 <div className="admin-card-actions">
@@ -415,7 +425,8 @@ export default function RegistrationManager({ eventSlug, eventUuid }) {
       {editingReg && (
         <EditRegistrationModal
           registration={editingReg}
-          categories={categoryOptions}
+          // Full rows when loaded, so the form can show each category's bib series.
+          categories={categories.length > 0 ? categories : categoryOptions}
           onSave={handleEditSave}
           onClose={() => setEditingReg(null)}
         />

@@ -3,6 +3,7 @@ import { Loader, RotateCcw } from 'lucide-react';
 
 import { CATEGORY_PRICING, CURRENT_EVENT, CATEGORY_RULES } from '../../../utils/constants';
 import { createGroupRegistration } from '../../../utils/services/groupRegistrations';
+import { getEntryBibs } from '../../../utils/services/registrations';
 import { previewCoupon } from '../../../utils/services/coupons';
 import { getEventCategories } from '../../../utils/services/categories';
 import { getCurrentEvent } from '../../../utils/services/events';
@@ -490,6 +491,29 @@ export default function GroupRegister() {
     localStorage.removeItem(DRAFT_KEY);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+
+  // Members of an online group are numbered when the payment is confirmed (or
+  // when online payment is switched off mid-payment), after the roster on this
+  // page was built. Fetch the issued bibs once.
+  const paidWithoutBibs = (result?.payment_status === 'PAID' || payPhase === 'offline') && !!result?.group_id
+    && (result?.participants || []).some(p => !p.bib);
+  useEffect(() => {
+    if (!paidWithoutBibs) return undefined;
+    let stale = false;
+    getEntryBibs({ groupId: result.group_id })
+      .then((entries) => {
+        if (stale || entries.length === 0) return;
+        const bibById = new Map(entries.map(e => [e.id, e.bib]));
+        setResult(prev => (prev?.group_id === result.group_id
+          ? {
+              ...prev,
+              participants: (prev.participants || []).map(p => ({ ...p, bib: bibById.get(p.id) ?? p.bib })),
+            }
+          : prev));
+      })
+      .catch(() => { /* each runner's confirmation email carries their bib */ });
+    return () => { stale = true; };
+  }, [paidWithoutBibs, result?.group_id]);
 
   const startPayment = useCallback(async (group, prefill) => {
     trackEvent('payment_started', { flow: 'group', amount: group?.total, participants: group?.participant_count });

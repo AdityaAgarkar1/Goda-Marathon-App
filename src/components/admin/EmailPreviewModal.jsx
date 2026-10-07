@@ -9,7 +9,7 @@ const SAMPLE_RUNNER = {
   first_name: 'Asha',
   last_name: 'Patil',
   email: 'asha.patil@example.com',
-  bib: '1042',
+  bib: '10042',
   category: '10K Run',
   tshirt_size: 'M',
   price: 1299,
@@ -32,9 +32,9 @@ const SAMPLE_GROUP = {
 };
 
 const SAMPLE_MEMBERS = [
-  { first_name: 'Ravi', last_name: 'Kale', email: 'ravi@example.com', bib: '1101', category: '10K Run' },
-  { first_name: 'Meera', last_name: 'Kale', email: 'meera@example.com', bib: '1102', category: '5K Run' },
-  { first_name: 'Arjun', last_name: 'Kale', email: 'arjun@example.com', bib: '1103', category: '5K Run' },
+  { first_name: 'Ravi', last_name: 'Kale', email: 'ravi@example.com', bib: '10101', category: '10K Run' },
+  { first_name: 'Meera', last_name: 'Kale', email: 'meera@example.com', bib: '5102', category: '5K Run' },
+  { first_name: 'Arjun', last_name: 'Kale', email: 'arjun@example.com', bib: '5103', category: '5K Run' },
 ];
 
 const VARIANTS = [
